@@ -4,12 +4,13 @@ import rospy
 import randgen_omni_dataset.odometry
 
 LOG_LEVEL = rospy.DEBUG
+INIT_SEED = 1
 
 if __name__ == '__main__':
 
     rospy.init_node('test_odometry', log_level=LOG_LEVEL)
 
-    odom = randgen_omni_dataset.odometry.Odometry()
+    odom = randgen_omni_dataset.odometry.Odometry(INIT_SEED)
     odom.change_state('WalkForward')
     odom.change_state('Rotate')
     odom.change_state('Rotate')

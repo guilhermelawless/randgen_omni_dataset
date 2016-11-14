@@ -1,9 +1,6 @@
 import rospy
 import random
 
-INIT_SEED = 1
-
-
 class AbstractOdometryStateVar(object):
     # The AbstractOdometryStateVar establishes the properties and methods for one state space variable
     # Variables include x, y, theta in this case
@@ -41,12 +38,12 @@ class Odometry(object):
     stateTypes = dict(WalkForward=0, Rotate=1)
     varTypes = dict(x=0, y=1, theta=2)
 
-    def __init__(self):
+    def __init__(self, seed):
         # state of the odometry generation
         self._state = Odometry.stateTypes['WalkForward']
 
         # initiate random seed with current system time
-        random.seed(INIT_SEED)
+        random.seed(seed)
 
         # each variable is a list corresponding to the state
         self.walkForward = [GaussianOdometryStateVar('x_WalkForward', 0, 1),
