@@ -1,6 +1,7 @@
 import rospy
 import random
 
+
 class AbstractOdometryStateVar(object):
     # The AbstractOdometryStateVar establishes the properties and methods for one state space variable
     # Variables include x, y, theta in this case
@@ -74,12 +75,13 @@ class Odometry(object):
     def get_state(self):
         return self._state
 
-    def get_rand_type(self, type):
+    def get_rand_type(self, rand_type):
+        ret = -1
         try:
-            obj = self.var_list[self._state][Odometry.varTypes[type]]
+            obj = self.var_list[self._state][Odometry.varTypes[rand_type]]
             ret = obj.rng()
         except KeyError:
-            rospy.logfatal('Variable %s does not exist' % type)
+            rospy.logfatal('Variable %s does not exist' % rand_type)
             raise
         return ret
 

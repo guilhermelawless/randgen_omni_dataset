@@ -2,32 +2,42 @@
 
 import rospy
 import randgen_omni_dataset.odometry
+import unittest
 
 LOG_LEVEL = rospy.DEBUG
-INIT_SEED = 1
+INIT_SEED = None
 
-if __name__ == '__main__':
 
-    rospy.init_node('test_odometry', log_level=LOG_LEVEL)
-
-    odom = randgen_omni_dataset.odometry.Odometry(INIT_SEED)
+def change_states():
     odom.change_state('WalkForward')
     odom.change_state('Rotate')
     odom.change_state('Rotate')
-    try:
-        odom.change_state('NotValid')
-    except:
-        pass
 
-    print 'Current state is %d' % odom.get_state()
 
+def rng():
     print 'RNG = %f' % odom.get_rand_type('x')
     print 'RNG = %f' % odom.get_rand_type('y')
-    try:
-        'RNG = %f' % odom.get_rand('z')
-    except:
-        pass
+    print 'RNG for all variables'
+    print odom.get_rand_all()
+    print odom.get_rand_all()
 
-    print 'Generating RNG for all variables'
-    values = odom.get_rand_all()
-    print values
+
+class OdometryTestCases(unittest.TestCase):
+    def test_states(self):
+        change_states()
+        with self.assertRaises(KeyError):
+            val = odom.change_state('NotValid')
+            print val
+
+        self.assertEqual(odom.get_state(), odom.stateTypes['Rotate'])
+
+    def test_rng(self):
+        rng()
+        with self.assertRaises(KeyError):
+            odom.get_rand_type('z')
+
+if __name__ == '__main__':
+    rospy.init_node('test_odometry', log_level=LOG_LEVEL)
+    odom = randgen_omni_dataset.odometry.Odometry(INIT_SEED)
+
+    unittest.main()
