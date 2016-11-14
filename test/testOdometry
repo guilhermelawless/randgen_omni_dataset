@@ -1,0 +1,32 @@
+#! /usr/bin/env python
+
+import rospy
+import randgen_omni_dataset.odometry
+
+LOG_LEVEL = rospy.DEBUG
+
+if __name__ == '__main__':
+
+    rospy.init_node('test_odometry', log_level=LOG_LEVEL)
+
+    odom = randgen_omni_dataset.odometry.Odometry()
+    odom.change_state('WalkForward')
+    odom.change_state('Rotate')
+    odom.change_state('Rotate')
+    try:
+        odom.change_state('NotValid')
+    except:
+        pass
+
+    print 'Current state is %d' % odom.get_state()
+
+    print 'RNG = %f' % odom.get_rand_type('x')
+    print 'RNG = %f' % odom.get_rand_type('y')
+    try:
+        'RNG = %f' % odom.get_rand('z')
+    except:
+        pass
+
+    print 'Generating RNG for all variables'
+    values = odom.get_rand_all()
+    print values
