@@ -1,5 +1,10 @@
 import rospy
+import threading
 import random
+import tf.transformations
+import std_msgs.msg
+import geometry_msgs.msg
+from nav_msgs.msg import Odometry as odometryMsgType
 
 
 class AbstractOdometryStateVar(object):
@@ -39,7 +44,7 @@ class Odometry(object):
     stateTypes = dict(WalkForward=0, Rotate=1)
     varTypes = dict(x=0, y=1, theta=2)
 
-    def __init__(self, seed):
+    def __init__(self, seed, topic, freq):
         # state of the odometry generation
         self._state = Odometry.stateTypes['WalkForward']
 
@@ -60,6 +65,23 @@ class Odometry(object):
         self.var_list.insert(Odometry.stateTypes['WalkForward'], self.walkForward)
         self.var_list.insert(Odometry.stateTypes['Rotate'],self.rotate)
 
+        # list of all values
+        self.values = dict()
+
+        # specific robot's odometry topic name
+        self.topic = str(topic)
+
+        # publisher of odometry values
+        self.publisher = rospy.Publisher(topic, odometryMsgType, queue_size=1)
+
+        # rate to publish odometry
+        self.rate = rospy.Rate(freq)
+
+        # initiate the msg to be quicker in the loop
+        self.msg = odometryMsgType()
+        self.msg.header = std_msgs.msg.Header()
+        self.msg.pose = geometry_msgs.msg.PoseWithCovariance()
+
     # Change state to Rotate or WalkForward
     def change_state(self, new_state):
         try:
@@ -76,7 +98,6 @@ class Odometry(object):
         return self._state
 
     def get_rand_type(self, rand_type):
-        ret = -1
         try:
             obj = self.var_list[self._state][Odometry.varTypes[rand_type]]
             ret = obj.rng()
@@ -86,8 +107,43 @@ class Odometry(object):
         return ret
 
     def get_rand_all(self):
-        values = []
-        for stateVar in self.var_list[self._state]:
-            values.append(stateVar.rng())
+        # populate values dictionary
+        self.values['x'] = self.get_rand_type('x')
+        self.values['y'] = self.get_rand_type('y')
+        self.values['theta'] = self.get_rand_type('theta')
 
-        return values
+        return self.values
+
+    def build_msg(self):
+        self.msg.header.stamp = rospy.Time.now()
+        self.msg.pose.pose.position.x = self.values['x']
+        self.msg.pose.pose.position.y = self.values['y']
+
+        # obtain quaternion from theta value (rotation about z axis)
+        quaternion = tf.transformations.quaternion_about_axis(self.values['theta'], [0,0,1])
+        self.msg.pose.pose.orientation.x = quaternion[0]
+        self.msg.pose.pose.orientation.y = quaternion[1]
+        self.msg.pose.pose.orientation.z = quaternion[2]
+        self.msg.pose.pose.orientation.w = quaternion[3]
+
+    def loop(self):
+        # wait for at least one subscriber
+        while not self.publisher.get_num_connections() > 0:
+            rospy.logdebug('Waiting for subscriber on %s' % self.topic)
+            rospy.sleep(1)  # 1s
+            if rospy.is_shutdown():
+                break
+
+        # as long as ROS is running
+        while not rospy.is_shutdown():
+            # generate new random numbers according to configuration
+            self.get_rand_all()
+
+            # build the ROS message in self.msg
+            self.build_msg()
+
+            # publish the message to the configured topic
+            self.publisher.publish(self.msg)
+
+            # sleep for the rest of the cycle
+            self.rate.sleep()

@@ -1,11 +1,19 @@
 #! /usr/bin/env python
 
 import rospy
-import randgen_omni_dataset.odometry
+from randgen_omni_dataset import odometry
 import unittest
+import threading
 
 LOG_LEVEL = rospy.DEBUG
 INIT_SEED = None
+MSG_TYPE = odometry.odometryMsgType
+TOPIC = '/omni1/odometry'
+FREQ = 33
+
+
+def odometry_callback(data):
+    rospy.loginfo('New msg at time %s' % data.header.stamp)
 
 
 def change_states():
@@ -38,6 +46,21 @@ class OdometryTestCases(unittest.TestCase):
 
 if __name__ == '__main__':
     rospy.init_node('test_odometry', log_level=LOG_LEVEL)
-    odom = randgen_omni_dataset.odometry.Odometry(INIT_SEED)
 
-    unittest.main()
+    # Odometry object
+    odom = odometry.Odometry(INIT_SEED, TOPIC, FREQ)
+
+    # Run our tests
+    test_thread = threading.Thread(target=unittest.main)
+    test_thread.start()
+
+    # Odometry loop thread and start
+    odometry_thread = threading.Thread(target=odom.loop)
+    odometry_thread.setDaemon(True)
+    odometry_thread.start()
+
+    # Subscriber to topic
+    sub = rospy.Subscriber(TOPIC, MSG_TYPE, callback=odometry_callback, queue_size=1)
+
+    # Wait for Ctrl+C, after this all daemon threads will be stopped
+    rospy.spin()

@@ -7,6 +7,7 @@ project(randgen_omni_dataset)
 find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
+  tf
 )
 
 find_package(read_omni_dataset REQUIRED)
