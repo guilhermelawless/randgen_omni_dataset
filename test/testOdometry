@@ -56,7 +56,6 @@ if __name__ == '__main__':
 
     # Odometry loop thread and start
     odometry_thread = threading.Thread(target=odom.loop)
-    odometry_thread.setDaemon(True)
     odometry_thread.start()
 
     # Subscriber to topic
@@ -64,3 +63,5 @@ if __name__ == '__main__':
 
     # Wait for Ctrl+C, after this all daemon threads will be stopped
     rospy.spin()
+    odometry_thread.join()
+
