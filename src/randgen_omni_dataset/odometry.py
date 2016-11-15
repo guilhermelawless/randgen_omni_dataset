@@ -56,8 +56,8 @@ class Odometry(object):
                             GaussianOdometryStateVar('y_WalkForward', 0, 0.1),
                             GaussianOdometryStateVar('theta_WalkForward', 0, 0.2)]
 
-        self.rotate = [ GaussianOdometryStateVar('y_Rotate', 0, 0.01),
-                        GaussianOdometryStateVar('x_Rotate', 0, 0.01),
+        self.rotate = [ GaussianOdometryStateVar('x_Rotate', 0, 0.01),
+                        GaussianOdometryStateVar('y_Rotate', 0, 0.01),
                         GaussianOdometryStateVar('theta_Rotate', 0, 0.02)]
 
         # get a list with all variables
