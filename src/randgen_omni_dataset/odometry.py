@@ -52,7 +52,7 @@ class Odometry(object):
         random.seed(seed)
 
         # each variable is a list corresponding to the state
-        self.walkForward = [GaussianOdometryStateVar('x_WalkForward', 0, 1),
+        self.walkForward = [GaussianOdometryStateVar('x_WalkForward', 0, 0.1),
                             GaussianOdometryStateVar('y_WalkForward', 0, 0.1),
                             GaussianOdometryStateVar('theta_WalkForward', 0, 0.2)]
 
@@ -142,8 +142,13 @@ class Odometry(object):
             # build the ROS message in self.msg
             self.build_msg()
 
-            # publish the message to the configured topic
-            self.publisher.publish(self.msg)
+            try:
+                # publish the message to the configured topic
+                self.publisher.publish(self.msg)
 
-            # sleep for the rest of the cycle
-            self.rate.sleep()
+                # sleep for the rest of the cycle
+                self.rate.sleep()
+
+            except rospy.ROSException:
+                rospy.logdebug('ROS shutdown while publishing odometry')
+                pass

@@ -13,7 +13,7 @@ FREQ = 33
 
 
 def odometry_callback(data):
-    rospy.loginfo('New msg at time %s' % data.header.stamp)
+    rospy.loginfo('New msg at time %s\nx=%f' % (data.header.stamp, data.pose.pose.position.x))
 
 
 def change_states():
@@ -60,6 +60,11 @@ if __name__ == '__main__':
 
     # Subscriber to topic
     sub = rospy.Subscriber(TOPIC, MSG_TYPE, callback=odometry_callback, queue_size=1)
+
+    # Publish in rotate and walkforward modes
+    odom.change_state('Rotate')
+    rospy.sleep(3)
+    odom.change_state('WalkForward')
 
     # Wait for Ctrl+C, after this all daemon threads will be stopped
     rospy.spin()
