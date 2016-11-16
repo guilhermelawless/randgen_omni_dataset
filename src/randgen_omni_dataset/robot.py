@@ -10,17 +10,16 @@ TWO_PI = math.pi * 2
 HEIGHT = 0.81
 BASE_FRAME = 'world'
 
-
 class Robot(object):
     # The Robot class holds the various robot components, such as odometry, laser-based observations, etc
 
     def __init__(self, init_pose, name='OMNI_DEFAULT'):
         # initial robot pose
-        self.init_pose = self.pose = init_pose
+        self.pose = init_pose
 
         # assertions for arguments
         assert isinstance(name, str)
-        assert isinstance(self.init_pose, dict)
+        assert isinstance(self.pose, dict)
 
         # robot name and namespace
         self.name = name
