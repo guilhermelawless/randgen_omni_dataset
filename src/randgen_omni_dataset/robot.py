@@ -14,16 +14,12 @@ BASE_FRAME = 'world'
 class Robot(object):
     # The Robot class holds the various robot components, such as odometry, laser-based observations, etc
 
-    def __init__(self, init_pose, name='OMNI_DEFAULT', initial_time=None):
-        # initial time
-        self.initial_time = initial_time if initial_time is not None else rospy.Time.now()
-
+    def __init__(self, init_pose, name='OMNI_DEFAULT'):
         # initial robot pose
         self.init_pose = self.pose = init_pose
 
         # assertions for arguments
         assert isinstance(name, str)
-        assert isinstance(self.initial_time, rospy.Time)
         assert isinstance(self.init_pose, dict)
 
         # robot name and namespace
