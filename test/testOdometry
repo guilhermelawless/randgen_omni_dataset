@@ -71,4 +71,5 @@ if __name__ == '__main__':
 
     # Wait for Ctrl+C, after this all daemon threads will be stopped
     rospy.spin()
+    odom.run(False)
     odometry_thread.join()

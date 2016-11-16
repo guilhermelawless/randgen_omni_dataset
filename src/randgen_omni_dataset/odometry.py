@@ -175,4 +175,5 @@ class Odometry(object):
 
     def run(self, flag):
         self.is_running = flag
+        rospy.logdebug('Odometry %s' % 'started' if flag is True else 'stopped')
 
