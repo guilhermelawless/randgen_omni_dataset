@@ -179,6 +179,7 @@ include_directories(
 catkin_install_python(
 	PROGRAMS
 		bin/hello
+		bin/robot
 		test/testOdometry
 	DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
