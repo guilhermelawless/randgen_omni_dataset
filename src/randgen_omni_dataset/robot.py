@@ -54,11 +54,17 @@ class Robot(object):
         self.odometry.run(flag)
 
     def one_loop(self):
+        # check running
+        if not self.is_running:
+            return False
+
         # perform one odometry loop
         self.odometry.one_loop()
 
         # add odometry to pose
         self.add_odometry()
+
+        return True
 
     def add_odometry(self):
 
