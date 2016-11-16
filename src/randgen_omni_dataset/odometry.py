@@ -40,6 +40,9 @@ class Odometry(object):
     # 2 states for the generation are considered:
     #   - Rotate: little variation in x and y, high for theta
     #   - WalkForward: little variation in theta and y, high for x
+    # You can use the Odometry object in 2 ways:
+    #   - It implements rate.sleep() in its loop which will block if ran in main thread, or can be multi-threaded
+    #   - Using the get_rand_all, build_msg, and publisher.publish methods to do at your own pace
 
     stateTypes = dict(WalkForward=0, Rotate=1)
     varTypes = dict(x=0, y=1, theta=2)
@@ -82,6 +85,9 @@ class Odometry(object):
         self.msg.header = std_msgs.msg.Header()
         self.msg.pose = geometry_msgs.msg.PoseWithCovariance()
 
+        # flag for running if loop is used
+        self.is_running = False
+
     # Change state to Rotate or WalkForward
     def change_state(self, new_state):
         try:
@@ -106,29 +112,50 @@ class Odometry(object):
             raise
         return ret
 
-    def get_rand_all(self):
+    def get_rand_all(self, values=None):
+        if values is None:
+            values = self.values
+
         # populate values dictionary
-        self.values['x'] = self.get_rand_type('x')
-        self.values['y'] = self.get_rand_type('y')
-        self.values['theta'] = self.get_rand_type('theta')
+        try:
+            values['x'] = self.get_rand_type('x')
+            values['y'] = self.get_rand_type('y')
+            values['theta'] = self.get_rand_type('theta')
+        except KeyError:
+            rospy.logfatal('Dictionary doesnt have x, y or theta')
+            raise
 
-        return self.values
+        return values
 
-    def build_msg(self):
-        self.msg.header.stamp = rospy.Time.now()
-        self.msg.pose.pose.position.x = self.values['x']
-        self.msg.pose.pose.position.y = self.values['y']
+    def build_msg(self, msg=None, values=None, stamp=None):
+        if values is None:
+            values = self.values
+
+        if msg is None:
+            msg = self.msg
+
+        if stamp is None:
+            stamp = rospy.Time.now()
+
+        msg.header.stamp = stamp
+        msg.pose.pose.position.x = values['x']
+        msg.pose.pose.position.y = values['y']
 
         # obtain quaternion from theta value (rotation about z axis)
-        quaternion = tf.transformations.quaternion_about_axis(self.values['theta'], [0,0,1])
-        self.msg.pose.pose.orientation.x = quaternion[0]
-        self.msg.pose.pose.orientation.y = quaternion[1]
-        self.msg.pose.pose.orientation.z = quaternion[2]
-        self.msg.pose.pose.orientation.w = quaternion[3]
+        quaternion = tf.transformations.quaternion_about_axis(values['theta'], [0,0,1])
+        msg.pose.pose.orientation.x = quaternion[0]
+        msg.pose.pose.orientation.y = quaternion[1]
+        msg.pose.pose.orientation.z = quaternion[2]
+        msg.pose.pose.orientation.w = quaternion[3]
+
+        return msg
 
     def loop(self):
         # as long as ROS is running
         while not rospy.is_shutdown():
+            while not self.is_running:
+                self.rate.sleep()
+
             # generate new random numbers according to configuration
             self.get_rand_all()
 
@@ -145,3 +172,7 @@ class Odometry(object):
             except rospy.ROSException:
                 rospy.logdebug('ROS shutdown while publishing odometry')
                 pass
+
+    def run(self, flag):
+        self.is_running = flag
+

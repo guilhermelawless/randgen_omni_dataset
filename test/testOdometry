@@ -61,6 +61,9 @@ if __name__ == '__main__':
     # Subscriber to topic
     sub = rospy.Subscriber(TOPIC, MSG_TYPE, callback=odometry_callback, queue_size=1)
 
+    # Flag odometry to begin loop
+    odom.run(True)
+
     # Publish in rotate and walkforward modes
     odom.change_state('Rotate')
     rospy.sleep(3)
@@ -69,4 +72,3 @@ if __name__ == '__main__':
     # Wait for Ctrl+C, after this all daemon threads will be stopped
     rospy.spin()
     odometry_thread.join()
-
