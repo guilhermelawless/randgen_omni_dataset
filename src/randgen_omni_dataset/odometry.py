@@ -127,13 +127,6 @@ class Odometry(object):
         self.msg.pose.pose.orientation.w = quaternion[3]
 
     def loop(self):
-        # wait for at least one subscriber
-        while not self.publisher.get_num_connections() > 0:
-            rospy.logdebug('Waiting for subscriber on %s' % self.topic)
-            rospy.sleep(1)  # 1s
-            if rospy.is_shutdown():
-                break
-
         # as long as ROS is running
         while not rospy.is_shutdown():
             # generate new random numbers according to configuration
