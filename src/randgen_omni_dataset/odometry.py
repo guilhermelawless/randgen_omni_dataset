@@ -163,28 +163,35 @@ class Odometry(object):
 
         return msg
 
+    def one_loop(self):
+        # perform one loop without sleeping
+
+        # generate new random numbers according to configuration
+        self.get_rand_all()
+
+        # build the ROS message in self.msg
+        self.build_msg()
+
+        try:
+            # publish the message to the configured topic
+            self.publisher.publish(self.msg)
+
+        except rospy.ROSException:
+            rospy.logdebug('ROS shutdown while publishing odometry')
+            pass
+
     def loop(self):
         # as long as ROS is running
         while not rospy.is_shutdown():
+            # if not running stay in this loop
             while not self.is_running:
                 self.rate.sleep()
 
-            # generate new random numbers according to configuration
-            self.get_rand_all()
+            # perform one loop
+            self.one_loop()
 
-            # build the ROS message in self.msg
-            self.build_msg()
-
-            try:
-                # publish the message to the configured topic
-                self.publisher.publish(self.msg)
-
-                # sleep for the rest of the cycle
-                self.rate.sleep()
-
-            except rospy.ROSException:
-                rospy.logdebug('ROS shutdown while publishing odometry')
-                pass
+            # sleep for the rest of the cycle
+            self.rate.sleep()
 
     def run(self, flag):
         # type: (bool) -> None
