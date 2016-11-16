@@ -180,6 +180,7 @@ catkin_install_python(
 	PROGRAMS
 		bin/hello
 		bin/robot
+		bin/ball
 		test/testOdometry
 	DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
