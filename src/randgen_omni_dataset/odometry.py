@@ -47,7 +47,15 @@ class Odometry(object):
     stateTypes = dict(WalkForward=0, Rotate=1)
     varTypes = dict(x=0, y=1, theta=2)
 
-    def __init__(self, seed, topic, freq):
+    def __init__(self, seed=None, topic='/odometry/', freq=10):
+        # type: (int, str, int) -> Odometry
+        """
+
+        :param seed: if specified, the RNG seed will be fixed (useful for debugging)
+        :param topic: topic to publish odometry to
+        :param freq: if the object loop method is used, this will be the rate of publishing messages
+        """
+
         # state of the odometry generation
         self._state = Odometry.stateTypes['WalkForward']
 
@@ -90,6 +98,7 @@ class Odometry(object):
 
     # Change state to Rotate or WalkForward
     def change_state(self, new_state):
+        # type: (str) -> None
         try:
             if Odometry.stateTypes[new_state] == self._state:
                 rospy.logwarn('Setting new state to the same state %s' % new_state)
@@ -101,9 +110,11 @@ class Odometry(object):
             raise
 
     def get_state(self):
+        # type: () -> int
         return self._state
 
     def get_rand_type(self, rand_type):
+        # type: (str) -> float
         try:
             obj = self.var_list[self._state][Odometry.varTypes[rand_type]]
             ret = obj.rng()
@@ -113,6 +124,7 @@ class Odometry(object):
         return ret
 
     def get_rand_all(self, values=None):
+        # type: (dictionary) -> dictionary
         if values is None:
             values = self.values
 
@@ -128,6 +140,7 @@ class Odometry(object):
         return values
 
     def build_msg(self, msg=None, values=None, stamp=None):
+        # type: (nav_msgs.msg.Odometry, dictionary, Time) -> nav_msgs.msg.Odometry
         if values is None:
             values = self.values
 
@@ -174,6 +187,7 @@ class Odometry(object):
                 pass
 
     def run(self, flag):
+        # type: (bool) -> None
         self.is_running = flag
         rospy.logdebug('Odometry %s' % 'started' if flag is True else 'stopped')
 

@@ -34,8 +34,7 @@ class OdometryTestCases(unittest.TestCase):
     def test_states(self):
         change_states()
         with self.assertRaises(KeyError):
-            val = odom.change_state('NotValid')
-            print val
+            odom.change_state('NotValid')
 
         self.assertEqual(odom.get_state(), odom.stateTypes['Rotate'])
 
@@ -48,7 +47,7 @@ if __name__ == '__main__':
     rospy.init_node('test_odometry', log_level=LOG_LEVEL)
 
     # Odometry object
-    odom = odometry.Odometry(INIT_SEED, TOPIC, FREQ)
+    odom = odometry.Odometry(freq=FREQ, topic=TOPIC)
 
     # Run our tests
     test_thread = threading.Thread(target=unittest.main)
