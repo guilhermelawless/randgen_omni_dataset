@@ -1,10 +1,23 @@
 import rospy
-import threading
 import random
 import tf.transformations
 import std_msgs.msg
-import geometry_msgs.msg
+from geometry_msgs.msg import PoseWithCovariance
 from nav_msgs.msg import Odometry as odometryMsgType
+
+MEAN_X_WF = 0.007
+STD_X_WF = 0.1*MEAN_X_WF
+MEAN_Y_WF = 0.000
+STD_Y_WF = 0.00005
+MEAN_THETA_WF = 0.000
+STD_THETA_WF = 0.0001
+
+MEAN_X_R = 0
+STD_X_R = 0.0001
+MEAN_Y_R = MEAN_Y_WF
+STD_Y_R = STD_Y_WF
+MEAN_THETA_R = 0.01
+STD_THETA_R = 0.1*MEAN_THETA_R
 
 
 class AbstractOdometryStateVar(object):
@@ -12,7 +25,10 @@ class AbstractOdometryStateVar(object):
     # Variables include x, y, theta in this case
     # Deriving classes should implement, for instance, based on the rng distribution type
 
-    def __init__(self, name):
+    def __init__(self, type, name):
+        # type of this variable
+        self.type = type
+
         # name of this variable
         self.name = name
 
@@ -21,9 +37,9 @@ class AbstractOdometryStateVar(object):
 
 
 class GaussianOdometryStateVar(AbstractOdometryStateVar):
-    def __init__(self, name, mean, sigma):
+    def __init__(self, type, name, mean, sigma):
         # Call the base class init
-        AbstractOdometryStateVar.__init__(self, name)
+        AbstractOdometryStateVar.__init__(self, type, name)
 
         # Save properties of mean and sigma
         self.mu = mean
@@ -63,13 +79,13 @@ class Odometry(object):
         random.seed(seed)
 
         # each variable is a list corresponding to the state
-        self.walkForward = [GaussianOdometryStateVar('x_WalkForward', 0, 0.1),
-                            GaussianOdometryStateVar('y_WalkForward', 0, 0.1),
-                            GaussianOdometryStateVar('theta_WalkForward', 0, 0.2)]
+        self.walkForward = [GaussianOdometryStateVar('x', 'x_WalkForward', MEAN_X_WF, STD_X_WF),
+                            GaussianOdometryStateVar('y', 'y_WalkForward', MEAN_Y_WF, STD_Y_WF),
+                            GaussianOdometryStateVar('theta', 'theta_WalkForward', MEAN_THETA_WF, STD_THETA_WF)]
 
-        self.rotate = [ GaussianOdometryStateVar('x_Rotate', 0, 0.01),
-                        GaussianOdometryStateVar('y_Rotate', 0, 0.01),
-                        GaussianOdometryStateVar('theta_Rotate', 0, 0.02)]
+        self.rotate = [ GaussianOdometryStateVar('x', 'x_Rotate', MEAN_X_R, STD_X_R),
+                        GaussianOdometryStateVar('y', 'y_Rotate', MEAN_Y_R, STD_Y_R),
+                        GaussianOdometryStateVar('theta', 'theta_Rotate', MEAN_THETA_R, STD_THETA_R)]
 
         # get a list with all variables
         self.var_list = []
@@ -91,7 +107,7 @@ class Odometry(object):
         # initiate the msg to be quicker in the loop
         self.msg = odometryMsgType()
         self.msg.header = std_msgs.msg.Header()
-        self.msg.pose = geometry_msgs.msg.PoseWithCovariance()
+        self.msg.pose = PoseWithCovariance()
 
         # flag for running if loop is used
         self.is_running = False
@@ -163,14 +179,14 @@ class Odometry(object):
 
         return msg
 
-    def one_loop(self):
+    def one_loop(self, stamp=None):
         # perform one loop without sleeping
 
         # generate new random numbers according to configuration
         self.get_rand_all()
 
         # build the ROS message in self.msg
-        self.build_msg()
+        self.build_msg(stamp=stamp)
 
         try:
             # publish the message to the configured topic
