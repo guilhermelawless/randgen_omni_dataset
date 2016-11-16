@@ -15,6 +15,7 @@ FIELD_MAX_Y = 5.0
 MAX_VEL_X = 1.0
 MAX_VEL_Y = 1.0
 
+
 class Ball(object):
     # The ball class holds the pose of a ball in the world, where {0,0,0} is the base frame
     # The model takes into account random acceleration for {x,y}
@@ -25,7 +26,7 @@ class Ball(object):
 
     radius = 0.1
 
-    def __init__(self, init_pose=None, freq_model=100, freq_pub=10, freq=None):
+    def __init__(self, init_pose=None, freq_model=100, freq_pub=10):
 
         # initial pose
         if init_pose is None:
@@ -84,7 +85,7 @@ class Ball(object):
 
     @property
     def ground_hit(self):
-        return self.pose['z'] + self.pose['vz'] * self.t - Ball.radius <= self.virtual_ground
+        return self.pose['z'] + self.pose['vz'] * self.t - Ball.radius < self.virtual_ground
 
     @property
     def above_ground(self):
@@ -122,19 +123,6 @@ class Ball(object):
         if fabs(self.pose['vy']) > MAX_VEL_Y:
             self.pose['vy'] *= 0.8
 
-        # Should the ball just stop in z?
-        if self.flag_hit_ground and self.pose['vz'] < 0.0 and self.pose['z'] < self.virtual_ground:
-            self.pose['z'] = self.virtual_ground
-            self.pose['vz'] = 0.0
-            self.flag_stop = True
-
-        # Will the ball hit the ground?
-        if not self.flag_hit_ground and self.ground_hit:
-            # Ball will hit the ground, invert velocity and damp it by half
-            self.pose['vz'] *= -0.5
-            self.flag_hit_ground = True
-            rospy.logdebug('Hit ground')
-
         # Should we pull? Low chance
         elif not self.flag_hover and random.random() > PULL_MIN_CHANCE:
             # Pull!
@@ -152,10 +140,26 @@ class Ball(object):
             self.timer_hover = rospy.Timer(rospy.Duration(HOVER_TIME), self.hover_callback)
             rospy.logdebug('Hovering for %ds' % HOVER_TIME)
 
+        # Will the ball hit the ground?
+        if not self.flag_hit_ground and self.ground_hit:
+            # Ball will hit the ground, invert velocity and damp it
+            self.pose['vz'] *= -0.7
+            self.flag_hit_ground = True
+            rospy.logdebug('Hit ground')
+
+        # Should the ball just stop in z?
+        elif self.flag_hit_ground and self.pose['vz'] < 0.0 and self.pose['z'] < self.virtual_ground:
+            self.pose['vz'] = 0.0
+            self.flag_stop = True
+
         # Update velocity and position
         if not self.flag_stop:
             self.pose['vz'] += ACC_GRAVITY * dt
             self.pose['z'] += self.pose['vz'] * dt + 0.5 * ACC_GRAVITY * dt * dt
+
+        # Check to remove hit ground flag
+        if self.flag_hit_ground and self.above_ground:
+            self.flag_hit_ground = False
 
     def loop(self):
         # while ros is running
