@@ -1,0 +1,16 @@
+#! /usr/bin/env python
+
+import rospy
+from randgen_omni_dataset import ball
+
+LOG_LEVEL = rospy.DEBUG
+FREQ_PUB = 33
+INIT_POSE = {'x': 1, 'y': 2, 'z': 3}
+
+if __name__ == '__main__':
+
+    rospy.init_node('ball', log_level=LOG_LEVEL)
+
+    ball = ball.Ball(init_pose=INIT_POSE, freq_pub=FREQ_PUB)
+    ball.run(True)
+    ball.loop()
