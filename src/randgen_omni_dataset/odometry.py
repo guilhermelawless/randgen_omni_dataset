@@ -101,7 +101,7 @@ class Odometry(object):
         self.topic = str(topic)
 
         # publisher of odometry values
-        self.publisher = rospy.Publisher(topic, odometryMsgType, queue_size=1)
+        self.publisher = rospy.Publisher(topic, odometryMsgType, queue_size=10)
 
         # service to change state
         self.service = rospy.Service(service, SendString, self.service_callback)

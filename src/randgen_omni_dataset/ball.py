@@ -1,7 +1,7 @@
 import rospy
-from geometry_msgs.msg import PointStamped
 import random
 from math import fabs
+from geometry_msgs.msg import PointStamped
 
 ACC_GRAVITY = -9.81  # m.s^-2
 PULL_MIN_CHANCE = 0.997
@@ -45,7 +45,7 @@ class Ball(object):
         self.timer_hover = None
 
         # publishers
-        self.pub_gt_rviz = rospy.Publisher('/target/gtPose', PointStamped, queue_size=1)
+        self.pub_gt_rviz = rospy.Publisher('/target/gtPose', PointStamped, queue_size=10)
 
         # model rate
         self.rate_model = rospy.Rate(freq_model)
@@ -63,6 +63,7 @@ class Ball(object):
         self.msg_GT_rviz.header.frame_id = BASE_FRAME
 
     def pub_callback(self, event):
+        # publish as rviz msg
         self.msg_GT_rviz.header.stamp = rospy.Time.now()
         self.msg_GT_rviz.point.x = self.pose['x']
         self.msg_GT_rviz.point.y = self.pose['y']

@@ -1,19 +1,31 @@
 import rospy
 import math
-from randgen_omni_dataset import odometry
+from math import pi, fmod
+import tf.transformations
 from geometry_msgs.msg import PoseWithCovariance
 from geometry_msgs.msg import PointStamped
-import tf.transformations
-#from read_omni_dataset.msg import BallData, LRMGTData, LRMLandmarksData
+from nav_msgs.msg import Odometry
+# from read_omni_dataset.msg import BallData, LRMGTData, LRMLandmarksData
 
-TWO_PI = math.pi * 2
 HEIGHT = 0.81
 BASE_FRAME = 'world'
+TWO_PI = 2.0*pi
+
+
+def normalize_angle(angle):
+    # normalize positive
+    a = fmod(fmod(angle, TWO_PI) + TWO_PI, TWO_PI)
+
+    # check if over pi
+    if a > pi:
+        a -= TWO_PI
+    return a
+
 
 class Robot(object):
     # The Robot class holds the various robot components, such as odometry, laser-based observations, etc
 
-    def __init__(self, init_pose, name='OMNI_DEFAULT'):
+    def __init__(self, init_pose, name='OMNI_DEFAULT', freq=10):
         # initial robot pose
         self.pose = init_pose
 
@@ -21,18 +33,18 @@ class Robot(object):
         assert isinstance(name, str)
         assert isinstance(self.pose, dict)
 
+        # rate
+        self.rate = rospy.Rate(freq)
+
         # robot name and namespace
         self.name = name
         self.namespace = '/' + name
 
+        # subscribers
+        self.sub_odometry = rospy.Subscriber(self.namespace + '/odometry', Odometry, callback=self.odometry_callback, queue_size=10)
+
         # publishers
-        self.pub_gt_rviz = rospy.Publisher(self.namespace + '/gtPose', PointStamped, queue_size=1)
-
-        # odometry object
-        self.odometry = odometry.Odometry(topic=self.namespace + '/odometry')
-
-        # initial state is walk forward
-        self.odometry.change_state('WalkForward')
+        self.pub_gt_rviz = rospy.Publisher(self.namespace + '/gtPose', PointStamped, queue_size=10)
 
         # set not running
         self.is_running = False
@@ -42,6 +54,16 @@ class Robot(object):
         self.msg_GT_rviz = PointStamped()
         self.msg_GT_rviz.header.frame_id = BASE_FRAME
 
+    def odometry_callback(self, msg):
+        # add to current pose
+        self.add_odometry(msg)
+
+        # print as debug
+        rospy.logdebug(self.pose_to_str())
+
+        # publish current pose
+        self.publish_rviz_gt()
+
     def run(self, flag):
         # check if flag is different from current
         if self.is_running == flag:
@@ -50,25 +72,20 @@ class Robot(object):
             # update state
         self.is_running = flag
 
-        # start or stop components according to flag
-        self.odometry.run(flag)
+    def loop(self):
+        # All through callbacks
+        rospy.spin()
 
-    def one_loop(self):
-        # check running
-        if not self.is_running:
-            return False
+    def add_odometry(self, msg):
 
-        # perform one odometry loop
-        self.odometry.one_loop()
+        values = {'x': msg.pose.pose.position.x, 'y': msg.pose.pose.position.y}
+        quaternion = (msg.pose.pose.orientation.x,
+                      msg.pose.pose.orientation.y,
+                      msg.pose.pose.orientation.z,
+                      msg.pose.pose.orientation.w)
 
-        # add odometry to pose
-        self.add_odometry()
-
-        return True
-
-    def add_odometry(self):
-
-        values = self.odometry.values
+        # yaw is 3rd values (pos 2)
+        values['theta'] = tf.transformations.euler_from_quaternion(quaternion)[2]
 
         # update pose
         try:
@@ -81,7 +98,7 @@ class Robot(object):
             self.pose['theta'] += initial_rot
             self.pose['x'] += translation*math.cos(self.pose['theta'])
             self.pose['y'] += translation*math.sin(self.pose['theta'])
-            self.pose['theta'] = (self.pose['theta'] + final_rot) % (TWO_PI)
+            self.pose['theta'] = normalize_angle(self.pose['theta'] + final_rot)
 
         except TypeError, err:
             rospy.logfatal('TypeError: reason - %s', err)
