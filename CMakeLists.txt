@@ -7,6 +7,7 @@ project(randgen_omni_dataset)
 find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
+  message_generation
   tf
 )
 
@@ -59,6 +60,11 @@ catkin_python_setup()
 #   Service2.srv
 # )
 
+add_service_files(
+    DIRECTORY srv
+    FILES SendString.srv
+  )
+
 ## Generate actions in the 'action' folder
 # add_action_files(
 #   FILES
@@ -71,6 +77,8 @@ catkin_python_setup()
 #   DEPENDENCIES
 #   std_msgs
 # )
+
+generate_messages()
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -104,7 +112,7 @@ catkin_python_setup()
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES randgen_omni_dataset
-#  CATKIN_DEPENDS rospy std_msgs
+   CATKIN_DEPENDS rospy std_msgs message_runtime
 #  DEPENDS system_lib
 )
 
@@ -181,6 +189,7 @@ catkin_install_python(
 		bin/hello
 		bin/robot
 		bin/ball
+		bin/odometry
 		test/testOdometry
 	DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 

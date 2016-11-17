@@ -4,6 +4,7 @@ import tf.transformations
 import std_msgs.msg
 from geometry_msgs.msg import PoseWithCovariance
 from nav_msgs.msg import Odometry as odometryMsgType
+from randgen_omni_dataset.srv import SendString, SendStringResponse
 
 MEAN_X_WF = 0.007
 STD_X_WF = 0.1*MEAN_X_WF
@@ -63,12 +64,13 @@ class Odometry(object):
     stateTypes = dict(WalkForward=0, Rotate=1)
     varTypes = dict(x=0, y=1, theta=2)
 
-    def __init__(self, seed=None, topic='/odometry/', freq=10):
-        # type: (int, str, int) -> Odometry
+    def __init__(self, seed=None, topic='/odometry/', service='/odometry/change_state', freq=10):
+        # type: (int, str, str, int) -> Odometry
         """
 
         :param seed: if specified, the RNG seed will be fixed (useful for debugging)
         :param topic: topic to publish odometry to
+        :param service: service name to advertise to interface with changing odometry states
         :param freq: if the object loop method is used, this will be the rate of publishing messages
         """
 
@@ -101,6 +103,9 @@ class Odometry(object):
         # publisher of odometry values
         self.publisher = rospy.Publisher(topic, odometryMsgType, queue_size=1)
 
+        # service to change state
+        self.service = rospy.Service(service, SendString, self.service_callback)
+
         # rate to publish odometry
         self.rate = rospy.Rate(freq)
 
@@ -111,6 +116,19 @@ class Odometry(object):
 
         # flag for running if loop is used
         self.is_running = False
+
+    def service_callback(self, req):
+
+        res = SendStringResponse()
+
+        try:
+            self.change_state(req.data)
+            res.success = True
+        except KeyError:
+            res.success = False
+            pass
+
+        return res
 
     # Change state to Rotate or WalkForward
     def change_state(self, new_state):
@@ -171,7 +189,7 @@ class Odometry(object):
         msg.pose.pose.position.y = values['y']
 
         # obtain quaternion from theta value (rotation about z axis)
-        quaternion = tf.transformations.quaternion_about_axis(values['theta'], [0,0,1])
+        quaternion = tf.transformations.quaternion_about_axis(values['theta'], [0, 0, 1])
         msg.pose.pose.orientation.x = quaternion[0]
         msg.pose.pose.orientation.y = quaternion[1]
         msg.pose.pose.orientation.z = quaternion[2]
@@ -179,7 +197,7 @@ class Odometry(object):
 
         return msg
 
-    def one_loop(self, stamp=None):
+    def loop_once(self, stamp=None):
         # perform one loop without sleeping
 
         # generate new random numbers according to configuration
@@ -204,7 +222,7 @@ class Odometry(object):
                 self.rate.sleep()
 
             # perform one loop
-            self.one_loop()
+            self.loop_once()
 
             # sleep for the rest of the cycle
             self.rate.sleep()
