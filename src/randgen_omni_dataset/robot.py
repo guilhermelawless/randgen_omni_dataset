@@ -1,15 +1,17 @@
 import rospy
 import math
 from math import pi, fmod
-import tf.transformations
-from geometry_msgs.msg import PoseWithCovariance
-from geometry_msgs.msg import PointStamped
+import numpy
+import tf.transformations, tf.broadcaster, tf.listener
+from geometry_msgs.msg import PoseWithCovariance, PoseStamped, Point, PointStamped
 from nav_msgs.msg import Odometry
-# from read_omni_dataset.msg import BallData, LRMGTData, LRMLandmarksData
+from visualization_msgs.msg import MarkerArray, Marker
+from read_omni_dataset.msg import BallData, LRMLandmarksData
 
 HEIGHT = 0.81
 BASE_FRAME = 'world'
-TWO_PI = 2.0*pi
+TWO_PI = 2.0 * pi
+LAST_TF_TIME = 0
 
 
 def normalize_angle(angle):
@@ -20,6 +22,26 @@ def normalize_angle(angle):
     if a > pi:
         a -= TWO_PI
     return a
+
+
+def build_marker_arrow(head):
+    marker = Marker()
+
+    marker.type = Marker.ARROW
+    marker.action = marker.ADD
+    marker.scale.x = 0.01
+    marker.scale.y = 0.03
+    marker.scale.z = 0.05
+    marker.color.a = 1
+    marker.color.r = marker.color.g = marker.color.b = 0.2
+
+    # tail is 0,0,0
+    marker.points.append(Point())
+
+    # head is already a point
+    marker.points.append(head)
+
+    return marker
 
 
 class Robot(object):
@@ -41,18 +63,43 @@ class Robot(object):
         self.namespace = '/' + name
 
         # subscribers
-        self.sub_odometry = rospy.Subscriber(self.namespace + '/odometry', Odometry, callback=self.odometry_callback, queue_size=10)
+        self.sub_odometry = rospy.Subscriber(self.namespace + '/odometry', Odometry, callback=self.odometry_callback,
+                                             queue_size=100)
+        self.sub_target = rospy.Subscriber('/target/gtPose', PointStamped, callback=self.target_callback,
+                                           queue_size=1)
 
         # publishers
-        self.pub_gt_rviz = rospy.Publisher(self.namespace + '/gtPose', PointStamped, queue_size=10)
+        self.pub_gt_rviz = rospy.Publisher(self.namespace + '/gtPose', PoseStamped, queue_size=10)
+        self.pub_landmark_observations = rospy.Publisher(self.namespace + '/landmarkObs', MarkerArray, queue_size=5)
+        self.pub_target_observation = rospy.Publisher(self.namespace + '/targetObs', Marker, queue_size=5)
+
+        # tf broadcaster
+        self.broadcaster = tf.TransformBroadcaster()
+        self.frame = self.name
+
+        # tf listener
+        self.listener = tf.TransformListener()
+
+        # landmarks
+        try:
+            self.lm_list = rospy.get_param('/landmarks')
+        except rospy.ROSException, err:
+            rospy.logerr('Error in parameter server - %s', err)
+            raise
+        except KeyError, err:
+            rospy.logerr('Value of %s not set', err)
+            raise
+
+        # target pose
+        self.target_pose = None
 
         # set not running
         self.is_running = False
 
         # GT pose
         self.msg_GT = PoseWithCovariance()
-        self.msg_GT_rviz = PointStamped()
-        self.msg_GT_rviz.header.frame_id = BASE_FRAME
+        self.msg_GT_rviz = PoseStamped()
+        self.msg_GT_rviz.header.frame_id = self.frame
 
     def odometry_callback(self, msg):
         # add to current pose
@@ -64,6 +111,16 @@ class Robot(object):
         # publish current pose
         self.publish_rviz_gt()
 
+        # generate landmark observations
+        self.generate_landmark_observations()
+
+        # generate target observation
+        self.generate_target_observation()
+
+    def target_callback(self, msg):
+        # save ball pose
+        self.target_pose = msg
+
     def run(self, flag):
         # check if flag is different from current
         if self.is_running == flag:
@@ -74,7 +131,10 @@ class Robot(object):
 
     def loop(self):
         # All through callbacks
-        rospy.spin()
+        try:
+            rospy.spin()
+        except rospy.ROSInterruptException:
+            pass
 
     def add_odometry(self, msg):
 
@@ -96,8 +156,8 @@ class Robot(object):
 
             # rotate, translate, rotate
             self.pose['theta'] += initial_rot
-            self.pose['x'] += translation*math.cos(self.pose['theta'])
-            self.pose['y'] += translation*math.sin(self.pose['theta'])
+            self.pose['x'] += translation * math.cos(self.pose['theta'])
+            self.pose['y'] += translation * math.sin(self.pose['theta'])
             self.pose['theta'] = normalize_angle(self.pose['theta'] + final_rot)
 
         except TypeError, err:
@@ -118,7 +178,7 @@ class Robot(object):
         msg.pose.position.y = self.pose['y']
 
         # obtain quaternion from theta value (rotation about z axis)
-        quaternion = tf.transformations.quaternion_about_axis(self.pose['theta'], [0,0,1])
+        quaternion = tf.transformations.quaternion_about_axis(self.pose['theta'], [0, 0, 1])
         msg.pose.pose.orientation.x = quaternion[0]
         msg.pose.pose.orientation.y = quaternion[1]
         msg.pose.pose.orientation.z = quaternion[2]
@@ -132,9 +192,74 @@ class Robot(object):
 
         assert isinstance(stamp, rospy.Time)
 
-        self.msg_GT_rviz.header.stamp = stamp
-        self.msg_GT_rviz.point.x = self.pose['x']
-        self.msg_GT_rviz.point.y = self.pose['y']
-        self.msg_GT_rviz.point.z = HEIGHT
+        quaternion = tf.transformations.quaternion_about_axis(self.pose['theta'], [0, 0, 1])
+
+        self.broadcaster.sendTransform((self.pose['x'], self.pose['y'], HEIGHT),
+                                       quaternion,
+                                       stamp,
+                                       self.frame,
+                                       BASE_FRAME)
+
+        msg = self.msg_GT_rviz
+        msg.header.stamp = stamp
+        # everyhing else is 0 because of TF
 
         self.pub_gt_rviz.publish(self.msg_GT_rviz)
+
+    def generate_landmark_observations(self):
+        marker_id = 0
+        stamp = rospy.Time()
+        markers = MarkerArray()
+        lm_point = PointStamped()
+        lm_point.header.frame_id = BASE_FRAME
+        lm_point.header.stamp = stamp
+
+        # for all landmarks (for now only 1, debug)
+        for lm in self.lm_list:
+            lm_point.point.x = lm[0]
+            lm_point.point.y = lm[1]
+
+            # Calc. the observation in the local frame
+            try:
+                lm_point_local = tf.TransformerROS.transformPoint(self.listener, self.frame, lm_point)
+            except tf.Exception, err:
+                rospy.logwarn('TF Error - %s', err)
+                return
+
+            # create a marker arrow to connect robot and landmark
+            marker = build_marker_arrow(lm_point_local.point)
+            marker.header.frame_id = self.frame
+            marker.header.stamp = rospy.Time.now()
+            marker.ns = self.namespace+'/landmarkObs'
+            marker.id = marker_id
+
+            markers.markers.append(marker)
+            marker_id += 1
+
+        self.pub_landmark_observations.publish(markers)
+
+    def generate_target_observation(self):
+        if self.target_pose is None:
+            return
+
+        marker_id = 0
+
+        # Modify the target_pose header stamp to be the time of the latest TF available
+        self.target_pose.header.stamp = rospy.Time()
+
+        # Calc. the observation in the local frame
+        try:
+            target_local = tf.TransformerROS.transformPoint(self.listener, self.frame, self.target_pose)
+        except tf.Exception, err:
+            rospy.logwarn('TF Error - %s', err)
+            return
+
+        # create a marker arrow to connect robot and landmark
+        marker = build_marker_arrow(target_local.point)
+        marker.header.frame_id = self.frame
+        marker.header.stamp = rospy.Time.now()
+        marker.ns = self.namespace + '/targetObs'
+        marker.id = marker_id
+        marker.color.g = 1.0
+
+        self.pub_target_observation.publish(marker)

@@ -1,0 +1,6 @@
+<launch>
+    <include file="$(find randgen_omni_dataset)/launch/fullRobot.launch"/>
+    <include file="$(find randgen_omni_dataset)/launch/landmarks.launch"/>
+
+    <node name="ball" pkg="randgen_omni_dataset" type="ball"/>
+</launch>

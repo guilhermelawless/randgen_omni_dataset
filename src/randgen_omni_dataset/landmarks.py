@@ -8,7 +8,6 @@ class Landmark(Marker):
         # Call base class init
         Marker.__init__(self)
 
-
         # Put our marker information in
         self.header.frame_id = frame
         self.header.stamp = rospy.Time.now()
