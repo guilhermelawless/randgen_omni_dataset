@@ -24,15 +24,17 @@ class Ball(object):
     #   - Impulse when ball hits the ground
     #   - Impulse by lifting the ball
 
-    radius = 0.1
-
-    def __init__(self, init_pose=None, freq_model=100, freq_pub=10):
+    def __init__(self, init_pose=None, freq_model=100, freq_pub=10, radius=0.1):
 
         # initial pose
         if init_pose is None:
             init_pose = {'x': 0, 'y': 0, 'z': 1}
         self.pose = init_pose
         assert len(self.pose) is 3
+
+        # radius
+        self.radius = radius
+        assert isinstance(radius, float)
 
         # velocities and flags
         self.pose['vx'] = self.pose['vy'] = self.pose['vz'] = 0.0
@@ -86,11 +88,11 @@ class Ball(object):
 
     @property
     def ground_hit(self):
-        return self.pose['z'] + self.pose['vz'] * self.t - Ball.radius < self.virtual_ground
+        return self.pose['z'] + self.pose['vz'] * self.t - self.radius < self.virtual_ground
 
     @property
     def above_ground(self):
-        return self.pose['vz'] > 0.0 and self.pose['z'] - Ball.radius > self.virtual_ground
+        return self.pose['vz'] > 0.0 and self.pose['z'] - self.radius > self.virtual_ground
 
     def hover_callback(self, event):
         self.flag_hover = False

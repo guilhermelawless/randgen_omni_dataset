@@ -13,4 +13,7 @@ if __name__ == '__main__':
 
     ball = ball.Ball(init_pose=INIT_POSE, freq_pub=FREQ_PUB)
     ball.run(True)
-    ball.loop()
+    try:
+        ball.loop()
+    except rospy.ROSInterruptException:
+        pass
