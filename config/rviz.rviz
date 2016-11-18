@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /PointStamped1
         - /PointStamped2
+        - /MarkerArray1
       Splitter Ratio: 0.5
     Tree Height: 552
   - Class: rviz/Selection
@@ -70,6 +71,14 @@ Visualization Manager:
       Topic: /target/gtPose
       Unreliable: false
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /landmarks
+      Name: MarkerArray
+      Namespaces:
+        landmarks_1: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -94,22 +103,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 13.9312
+      Distance: 15.3367
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.65788
-        Y: 1.6005
-        Z: -0.356962
+        X: 2.96572
+        Y: 1.90972
+        Z: -0.800178
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.130399
+      Pitch: 1.0198
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.5304
+      Yaw: 1.5454
     Saved: ~
 Window Geometry:
   Displays:

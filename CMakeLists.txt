@@ -190,6 +190,7 @@ catkin_install_python(
 		bin/robot
 		bin/ball
 		bin/odometry
+		bin/landmarks
 		test/testOdometry
 	DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
