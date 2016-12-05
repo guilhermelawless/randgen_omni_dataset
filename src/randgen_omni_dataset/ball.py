@@ -10,8 +10,6 @@ HOVER_TIME = 2
 HOVER_HEIGHT = 0.8
 BASE_FRAME = 'world'
 VEL_PULL = 5
-FIELD_MAX_X = 5.0
-FIELD_MAX_Y = 5.0
 MAX_VEL_X = 1.0
 MAX_VEL_Y = 1.0
 
@@ -25,6 +23,20 @@ class Ball(object):
     #   - Impulse by lifting the ball
 
     def __init__(self, init_pose=None, freq_model=100, freq_pub=10, radius=0.1):
+
+        # initiate seed
+        random.seed = None
+        random.jumpahead(freq_model+freq_pub)
+
+        # parameters: walls
+        try:
+            self.walls = rospy.get_param('/walls')
+        except rospy.ROSException, err:
+            rospy.logerr('Error in parameter server - %s', err)
+            raise
+        except KeyError, err:
+            rospy.logerr('Value of %s not set', err)
+            raise
 
         # initial pose
         if init_pose is None:
@@ -113,10 +125,10 @@ class Ball(object):
         self.pose['y'] += self.pose['vy'] * dt + 0.5 * ay * dt * dt
 
         # Check if the sides are hit
-        if fabs(self.pose['x']) > FIELD_MAX_X:
+        if self.pose['x'] < self.walls['left'] or self.pose['x'] > self.walls['right']:
             self.pose['vx'] *= -1.0
 
-        if fabs(self.pose['y']) > FIELD_MAX_Y:
+        if self.pose['y'] < self.walls['down'] or self.pose['y'] > self.walls['up']:
             self.pose['vy'] *= -1.0
 
         # Check max velocities
