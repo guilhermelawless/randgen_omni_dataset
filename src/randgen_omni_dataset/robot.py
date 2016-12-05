@@ -70,6 +70,17 @@ class Robot(object):
         self.name = name
         self.namespace = '/' + name
 
+        # other robots
+        self.otherRobots = list()
+        playing_robots = rospy.get_param('PLAYING_ROBOTS')
+        for idx, running in enumerate(playing_robots):
+            print 'Robot idx %d, running %d' % (idx, running)
+            idx_s = str(idx+1)
+            # add to list if it's running and is not self
+            if running == 1 and not self.name.endswith(idx_s):
+                self.otherRobots.append('OMNI' + idx_s)
+        print self.otherRobots
+
         # subscribers
         self.sub_odometry = rospy.Subscriber(self.namespace + '/genOdometry', customOdometryMsg, callback=self.odometry_callback,
                                              queue_size=100)

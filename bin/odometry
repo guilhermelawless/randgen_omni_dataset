@@ -3,7 +3,7 @@
 import rospy
 from randgen_omni_dataset import odometry
 
-LOG_LEVEL = rospy.DEBUG
+LOG_LEVEL = rospy.INFO
 INIT_SEED = None
 NODE_NAME = 'OMNI1_gen_odometry'
 TOPIC = '/OMNI1/genOdometry'

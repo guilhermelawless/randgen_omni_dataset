@@ -1,8 +1,8 @@
 <launch>
-    <node name="OMNI1_robot" pkg="randgen_omni_dataset" type="robot" output="log">
+    <node name="OMNI1_robot" pkg="randgen_omni_dataset" type="robot" output="screen">
     </node>
 
-    <node name="OMNI_odometry" pkg="randgen_omni_dataset" type="odometry">
+    <node name="OMNI_odometry" pkg="randgen_omni_dataset" type="odometry" output="screen">
 
     </node>
 </launch>
