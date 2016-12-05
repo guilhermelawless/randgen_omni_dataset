@@ -5,17 +5,19 @@ from randgen_omni_dataset import odometry
 
 LOG_LEVEL = rospy.INFO
 INIT_SEED = None
-NODE_NAME = 'OMNI1_gen_odometry'
-TOPIC = '/OMNI1/genOdometry'
-SERVICE = '/OMNI1/genOdometry/change_state'
 FREQ = 33
 
 if __name__ == '__main__':
-    # Init node
-    rospy.init_node(NODE_NAME, log_level=LOG_LEVEL)
+    # Init node - set in launch file for a different name
+    rospy.init_node('OMNI_DEFAULT_ODOMETRY', log_level=LOG_LEVEL)
+
+    # Get useful parameters
+    topic = rospy.get_param('~topic')
+
+    service = topic + '/change_state'
 
     # Odometry object
-    odom = odometry.Odometry(freq=FREQ, topic=TOPIC, service=SERVICE)
+    odom = odometry.Odometry(freq=FREQ, topic=topic, service=service)
     odom.run(True)
 
     # Start odom loop, will exit when shutdown
