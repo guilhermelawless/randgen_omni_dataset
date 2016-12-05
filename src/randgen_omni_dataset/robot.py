@@ -1,18 +1,31 @@
 import rospy
 import math
 from math import pi, fmod
-import tf.transformations, tf.broadcaster, tf.listener
-from geometry_msgs.msg import PoseWithCovariance, PoseStamped, Point, PointStamped
+import tf, tf.transformations
+from geometry_msgs.msg import PoseWithCovariance, PoseStamped, Point, PointStamped, Quaternion
 from std_msgs.msg import Header
 from nav_msgs.msg import Odometry as odometryMsg
 from randgen_omni_dataset.odometry import customOdometryMsg
 from visualization_msgs.msg import MarkerArray, Marker
+from randgen_omni_dataset.srv import *
 from read_omni_dataset.msg import BallData, LRMLandmarksData
 
 HEIGHT = 0.81
 BASE_FRAME = 'world'
 TWO_PI = 2.0 * pi
 LAST_TF_TIME = 0
+
+
+def norm2(x, y):
+    return math.sqrt(math.pow(x,2) + math.pow(y,2))
+
+
+def orientation_to_theta(orientation):
+    assert isinstance(orientation, Quaternion)
+    q = (orientation.x, orientation.y, orientation.z, orientation.w)
+
+    # return yaw
+    return tf.transformations.euler_from_quaternion(q)[2]
 
 
 def normalize_angle(angle):
@@ -67,38 +80,11 @@ class Robot(object):
         self.target_timer = None
 
         # robot name and namespace
-        self.name = name
-        self.namespace = '/' + name
+        self.name = name[1:] # remove /
+        self.namespace = name
 
-        # other robots
-        self.otherRobots = list()
-        playing_robots = rospy.get_param('PLAYING_ROBOTS')
-        for idx, running in enumerate(playing_robots):
-            print 'Robot idx %d, running %d' % (idx, running)
-            idx_s = str(idx+1)
-            # add to list if it's running and is not self
-            if running == 1 and not self.name.endswith(idx_s):
-                self.otherRobots.append('OMNI' + idx_s)
-        print self.otherRobots
-
-        # subscribers
-        self.sub_odometry = rospy.Subscriber(self.namespace + '/genOdometry', customOdometryMsg, callback=self.odometry_callback,
-                                             queue_size=100)
-        self.sub_target = rospy.Subscriber('/target/gtPose', PointStamped, callback=self.target_callback,
-                                           queue_size=1)
-
-        # publishers
-        self.pub_odometry = rospy.Publisher(self.namespace + '/odometry', odometryMsg, queue_size=100)
-        self.pub_gt_rviz = rospy.Publisher(self.namespace + '/gtPose', PoseStamped, queue_size=10)
-        self.pub_landmark_observations = rospy.Publisher(self.namespace + '/landmarkObs', MarkerArray, queue_size=5)
-        self.pub_target_observation = rospy.Publisher(self.namespace + '/targetObs', Marker, queue_size=5)
-
-        # tf broadcaster
-        self.broadcaster = tf.TransformBroadcaster()
+        # frame
         self.frame = self.name
-
-        # tf listener
-        self.listener = tf.TransformListener()
 
         # landmarks
         try:
@@ -126,27 +112,46 @@ class Robot(object):
         self.msg_GT_rviz = PoseStamped()
         self.msg_GT_rviz.header.frame_id = self.frame
 
-    def odometry_callback(self, msg):
-        # type: (customOdometryMsg) -> None
+        # odometry service
+        self.service_change_state = rospy.ServiceProxy(self.namespace + '/genOdometry/change_state', SendString)
+        self.service_change_state.wait_for_service()
+        self.service_change_state('WalkForward')
+        self.is_rotating = False
 
-        # if not running, do nothing
-        if not self.is_running:
-            return
+        # subscribers
+        self.sub_odometry = rospy.Subscriber(self.namespace + '/genOdometry', customOdometryMsg, callback=self.odometry_callback,
+                                             queue_size=100)
+        self.sub_target = rospy.Subscriber('/target/gtPose', PointStamped, callback=self.target_callback,
+                                           queue_size=1)
 
-        # convert to normal odometry msg, self.msg_odometry will be updated
-        self.convert_odometry(msg)
+        # publishers
+        self.pub_odometry = rospy.Publisher(self.namespace + '/odometry', odometryMsg, queue_size=100)
+        self.pub_gt_rviz = rospy.Publisher(self.namespace + '/gtPose', PoseStamped, queue_size=10)
+        self.pub_landmark_observations = rospy.Publisher(self.namespace + '/landmarkObs', MarkerArray, queue_size=5)
+        self.pub_target_observation = rospy.Publisher(self.namespace + '/targetObs', Marker, queue_size=5)
 
-        # publish the odometry in standard format
-        self.pub_odometry.publish(self.msg_odometry)
+        # tf broadcaster
+        self.broadcaster = tf.TransformBroadcaster()
 
-        # add to current pose using custom msg type (easier to add)
-        self.add_odometry(msg)
+        # tf listener
+        self.listener = tf.TransformListener()
 
-        # print as debug
-        rospy.logdebug(self.pose_to_str())
-
-        # publish current pose
-        self.publish_rviz_gt()
+        # other robots
+        list_ctr = 0
+        self.otherRobots = list()
+        playing_robots = rospy.get_param('PLAYING_ROBOTS')
+        for idx, running in enumerate(playing_robots):
+            idx += 1
+            idx_s = str(idx)
+            # add to list if it's running and is not self
+            if running == 1 and not self.name.endswith(idx_s):
+                # add subscriber to its pose, with an additional argument concerning the list position
+                other_name = 'OMNI'+idx_s
+                rospy.Subscriber(other_name + '/gtPose', PoseStamped, self.other_robots_callback, list_ctr)
+                self.otherRobots.append((other_name, False))
+                # wait for odometry service to be available before continue
+                rospy.wait_for_service(other_name + '/genOdometry/change_state')
+                list_ctr += 1
 
     def target_callback(self, msg):
         # save ball pose
@@ -177,6 +182,41 @@ class Robot(object):
             rospy.spin()
         except rospy.ROSInterruptException:
             pass
+
+    def odometry_callback(self, msg):
+        # type: (customOdometryMsg) -> None
+
+        # if not running, do nothing
+        if not self.is_running:
+            return
+
+        # convert to normal odometry msg, self.msg_odometry will be updated
+        self.convert_odometry(msg)
+
+        # publish the odometry in standard format
+        self.pub_odometry.publish(self.msg_odometry)
+
+        # add to current pose using custom msg type (easier to add)
+        self.add_odometry(msg)
+
+        # print as debug
+        rospy.logdebug(self.pose_to_str())
+
+        # publish current pose
+        self.publish_rviz_gt()
+
+        # check for collisions by generating observations to other robots
+        collision = self.check_colisions_other_robots()
+
+        # when rotating and no longer flagged for collision, start walking forward
+        if self.is_rotating and not collision:
+            self.service_change_state('WalkForward')
+            self.is_rotating = False
+
+        # when walking forward if collision detected, start rotating
+        elif not self.is_rotating and collision:
+            self.service_change_state('Rotate')
+            self.is_rotating = True
 
     def convert_odometry(self, msg):
         # type: (customOdometryMsg) -> odometryMsg
@@ -307,3 +347,32 @@ class Robot(object):
         marker.color.g = 1.0
 
         self.pub_target_observation.publish(marker)
+
+    def other_robots_callback(self, msg, list_id):
+        # Replace tuple with a new tuple with the same name and a new PoseStamped
+        self.otherRobots[list_id] = (self.otherRobots[list_id][0], msg)
+
+    def check_colisions_other_robots(self):
+        # type: () -> boolean
+        for robot, msg in self.otherRobots:
+            # check if any message has been received
+            if msg is False:
+                continue
+
+            try:
+                # find latest time for transformation
+                msg.header.stamp = self.listener.getLatestCommonTime(self.frame, msg.header.frame_id)
+                new_pose = self.listener.transformPose(self.frame, msg)
+            except tf.Exception, err:
+                rospy.logwarn("TF Exception when transforming other robots: %s", err)
+                continue
+
+            dist = norm2(new_pose.pose.position.x, new_pose.pose.position.y)
+            ang = normalize_angle(math.atan2(new_pose.pose.position.y, new_pose.pose.position.x))
+
+            # if next to other robot and going to walk into it, return collision
+            if dist < 1.0 and abs(ang) < math.radians(20):
+                return True
+
+        # no collision
+        return False

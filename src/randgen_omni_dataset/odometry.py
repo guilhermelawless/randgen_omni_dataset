@@ -132,7 +132,7 @@ class Odometry(object):
         # type: (str) -> None
         try:
             if Odometry.stateTypes[new_state] == self._state:
-                rospy.logwarn('Setting new state to the same state %s' % new_state)
+                rospy.logdebug('Setting new state to the same state %s' % new_state)
             else:
                 rospy.logdebug('Changed odometry state to %s' % new_state)
                 self._state = Odometry.stateTypes[new_state]
