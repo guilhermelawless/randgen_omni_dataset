@@ -1,5 +1,7 @@
 <launch>
     <rosparam param="PLAYING_ROBOTS"> [1, 1] </rosparam>
+    <rosparam param="/walls">{'left': -5.0, 'right': 5.0, 'up': 5.0, 'down': -5.0}</rosparam>
+
     <include file="$(find randgen_omni_dataset)/launch/landmarks.launch"/>
     <node name="ball" pkg="randgen_omni_dataset" type="ball"/>
     

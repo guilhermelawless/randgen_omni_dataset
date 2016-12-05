@@ -1,5 +1,6 @@
 import rospy
 import math
+import random
 from math import pi, fmod
 import tf, tf.transformations
 from geometry_msgs.msg import PoseWithCovariance, PoseStamped, Point, PointStamped, Quaternion
@@ -14,10 +15,14 @@ HEIGHT = 0.81
 BASE_FRAME = 'world'
 TWO_PI = 2.0 * pi
 LAST_TF_TIME = 0
+MAX_DIST_FROM_ROBOTS = 1.0
+MAX_ANGLE_FROM_ROBOTS = math.radians(25)
+MAX_DIST_FROM_WALLS = 0.2
+MAX_ANGLE_FROM_WALLS = pi/2.0
 
 
 def norm2(x, y):
-    return math.sqrt(math.pow(x,2) + math.pow(y,2))
+    return math.sqrt(math.pow(x, 2) + math.pow(y, 2))
 
 
 def orientation_to_theta(orientation):
@@ -67,6 +72,11 @@ class Robot(object):
         # initial robot pose
         self.pose = init_pose
 
+        # initiate seed with current system time
+        random.seed = None
+        # jump ahead a number dependant on this robot
+        random.jumpahead(sum(ord(c) for c in name))
+
         # assertions for arguments
         assert isinstance(name, str)
         assert isinstance(self.pose, dict)
@@ -86,14 +96,28 @@ class Robot(object):
         # frame
         self.frame = self.name
 
-        # landmarks
+        # parameters: landmarks, walls, playing robots
         try:
             self.lm_list = rospy.get_param('/landmarks')
+            walls = rospy.get_param('/walls')
+            playing_robots = rospy.get_param('PLAYING_ROBOTS')
         except rospy.ROSException, err:
             rospy.logerr('Error in parameter server - %s', err)
             raise
         except KeyError, err:
             rospy.logerr('Value of %s not set', err)
+            raise
+
+        # build walls list from the dictionary
+        # tuple -> (location, variable to check, reference angle)
+        try:
+            self.walls = list()
+            self.walls.append((walls['left'], 'x', pi))
+            self.walls.append((walls['right'], 'x', 0.0))
+            self.walls.append((walls['down'], 'y', -pi/2.0))
+            self.walls.append((walls['up'], 'y', pi/2.0))
+        except KeyError:
+            rospy.logerr('Parameter /walls does not include left, right, down and up')
             raise
 
         # target pose
@@ -117,6 +141,7 @@ class Robot(object):
         self.service_change_state.wait_for_service()
         self.service_change_state('WalkForward')
         self.is_rotating = False
+        self.rotating_timer_set = False
 
         # subscribers
         self.sub_odometry = rospy.Subscriber(self.namespace + '/genOdometry', customOdometryMsg, callback=self.odometry_callback,
@@ -139,19 +164,20 @@ class Robot(object):
         # other robots
         list_ctr = 0
         self.otherRobots = list()
-        playing_robots = rospy.get_param('PLAYING_ROBOTS')
         for idx, running in enumerate(playing_robots):
             idx += 1
             idx_s = str(idx)
             # add to list if it's running and is not self
-            if running == 1 and not self.name.endswith(idx_s):
-                # add subscriber to its pose, with an additional argument concerning the list position
-                other_name = 'OMNI'+idx_s
-                rospy.Subscriber(other_name + '/gtPose', PoseStamped, self.other_robots_callback, list_ctr)
-                self.otherRobots.append((other_name, False))
-                # wait for odometry service to be available before continue
-                rospy.wait_for_service(other_name + '/genOdometry/change_state')
-                list_ctr += 1
+            if running == 0 or self.name.endswith(idx_s):
+                continue
+
+            # add subscriber to its pose, with an additional argument concerning the list position
+            other_name = 'OMNI'+idx_s
+            rospy.Subscriber(other_name + '/gtPose', PoseStamped, self.other_robots_callback, list_ctr)
+            self.otherRobots.append((other_name, False))
+            # wait for odometry service to be available before continue
+            rospy.wait_for_service(other_name + '/genOdometry/change_state')
+            list_ctr += 1
 
     def target_callback(self, msg):
         # save ball pose
@@ -205,18 +231,31 @@ class Robot(object):
         # publish current pose
         self.publish_rviz_gt()
 
-        # check for collisions by generating observations to other robots
-        collision = self.check_colisions_other_robots()
+        # if rotating timer is set, don't even check for collisions
+        if self.rotating_timer_set:
+            return
 
-        # when rotating and no longer flagged for collision, start walking forward
+        # check for collisions by generating observations to other robots
+        collision = self.check_collisions_other_robots()
+
+        # check for collisions with the world
+        collision |= self.check_collisions_world()
+
+        # when rotating and no longer flagged for collision, start a timer before walking forward
         if self.is_rotating and not collision:
-            self.service_change_state('WalkForward')
-            self.is_rotating = False
+            # keep rotating for 1 < rand < 5 secs
+            rospy.Timer(rospy.Duration(random.randint(1, 4), random.randint(0, 1e9)), self.stop_rotating, oneshot=True)
+            self.rotating_timer_set = True
 
         # when walking forward if collision detected, start rotating
         elif not self.is_rotating and collision:
             self.service_change_state('Rotate')
             self.is_rotating = True
+
+    def stop_rotating(self, event):
+        self.service_change_state('WalkForward')
+        self.is_rotating = False
+        self.rotating_timer_set = False
 
     def convert_odometry(self, msg):
         # type: (customOdometryMsg) -> odometryMsg
@@ -352,7 +391,7 @@ class Robot(object):
         # Replace tuple with a new tuple with the same name and a new PoseStamped
         self.otherRobots[list_id] = (self.otherRobots[list_id][0], msg)
 
-    def check_colisions_other_robots(self):
+    def check_collisions_other_robots(self):
         # type: () -> boolean
         for robot, msg in self.otherRobots:
             # check if any message has been received
@@ -371,8 +410,21 @@ class Robot(object):
             ang = normalize_angle(math.atan2(new_pose.pose.position.y, new_pose.pose.position.x))
 
             # if next to other robot and going to walk into it, return collision
-            if dist < 1.0 and abs(ang) < math.radians(20):
+            if dist < MAX_DIST_FROM_ROBOTS and abs(ang) < MAX_ANGLE_FROM_ROBOTS:
+                # return collision
                 return True
 
         # no collision
         return False
+
+    def check_collisions_world(self):
+        # type () -> boolean
+
+        for location, variable, reference_angle in self.walls:
+            if abs(self.pose[variable] - location) < MAX_DIST_FROM_WALLS and abs(normalize_angle(self.pose['theta'] - reference_angle)) < MAX_ANGLE_FROM_WALLS:
+                # Future collision detected
+                return True
+
+        # No collision
+        return False
+
