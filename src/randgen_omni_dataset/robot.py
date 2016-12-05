@@ -48,8 +48,8 @@ def build_marker_arrow(head):
 class Robot(object):
     # The Robot class holds the various robot components, such as odometry, laser-based observations, etc
 
-    def __init__(self, init_pose, name='OMNI_DEFAULT', freq=10):
-        # type: (dict, str, int) -> None
+    def __init__(self, init_pose, name='OMNI_DEFAULT', target_freq = 20, landmark_freq = 20):
+        # type: (dict, str, int, int) -> None
 
         # initial robot pose
         self.pose = init_pose
@@ -57,6 +57,14 @@ class Robot(object):
         # assertions for arguments
         assert isinstance(name, str)
         assert isinstance(self.pose, dict)
+        assert isinstance(target_freq, int)
+        assert isinstance(landmark_freq, int)
+
+        # timers for observation callbacks
+        self.landmark_timer_period = 1.0/landmark_freq
+        self.landmark_timer = None
+        self.target_timer_period = 1.0/target_freq
+        self.target_timer = None
 
         # robot name and namespace
         self.name = name
@@ -110,6 +118,10 @@ class Robot(object):
     def odometry_callback(self, msg):
         # type: (customOdometryMsg) -> None
 
+        # if not running, do nothing
+        if not self.is_running:
+            return
+
         # convert to normal odometry msg, self.msg_odometry will be updated
         self.convert_odometry(msg)
 
@@ -125,12 +137,6 @@ class Robot(object):
         # publish current pose
         self.publish_rviz_gt()
 
-        # generate landmark observations
-        self.generate_landmark_observations()
-
-        # generate target observation
-        self.generate_target_observation()
-
     def target_callback(self, msg):
         # save ball pose
         self.target_pose = msg
@@ -140,8 +146,19 @@ class Robot(object):
         if self.is_running == flag:
             return
 
-            # update state
+        # update state
         self.is_running = flag
+
+        # set or shutdown timers
+        if self.is_running:
+            self.landmark_timer = rospy.Timer(rospy.Duration(self.landmark_timer_period),
+                                              self.generate_landmark_observations)
+
+            self.target_timer = rospy.Timer(rospy.Duration(self.target_timer_period),
+                                            self.generate_target_observation)
+        else:
+            self.landmark_timer.shutdown()
+            self.target_timer.shutdown()
 
     def loop(self):
         # All through callbacks
@@ -222,7 +239,7 @@ class Robot(object):
 
         self.pub_gt_rviz.publish(self.msg_GT_rviz)
 
-    def generate_landmark_observations(self):
+    def generate_landmark_observations(self, event):
         marker_id = 0
         stamp = rospy.Time() # last available tf
         markers = MarkerArray()
@@ -254,7 +271,7 @@ class Robot(object):
 
         self.pub_landmark_observations.publish(markers)
 
-    def generate_target_observation(self):
+    def generate_target_observation(self, event):
         if self.target_pose is None:
             return
 
