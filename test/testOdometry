@@ -7,14 +7,15 @@ from randgen_omni_dataset import odometry
 
 LOG_LEVEL = rospy.DEBUG
 INIT_SEED = None
-MSG_TYPE = odometry.odometryMsgType
-TOPIC = '/OMNI1/odometry'
-SERVICE = '/OMNI1/odometry/change_state'
+MSG_TYPE = odometry.customOdometryMsg
+TOPIC = '/OMNI1/genOdometry'
+SERVICE = '/OMNI1/genOdometry/change_state'
 FREQ = 33
 
 
 def odometry_callback(data):
-    rospy.loginfo('New msg at time %s\nx=%f' % (data.header.stamp, data.pose.pose.position.x))
+    rospy.loginfo('New msg at time %s\ntranslation=%f\nrot1=%f\nrot2=%f\nstate=%s' %
+                  (data.header.stamp, data.translation, data.rot1, data.rot2, data.state))
 
 
 def change_states():
@@ -24,8 +25,8 @@ def change_states():
 
 
 def rng():
-    print 'RNG = %f' % odom.get_rand_type('x')
-    print 'RNG = %f' % odom.get_rand_type('y')
+    print 'RNG = %f' % odom.get_rand_type('t')
+    print 'RNG = %f' % odom.get_rand_type('r1')
     print 'RNG for all variables'
     print odom.get_rand_all()
     print odom.get_rand_all()

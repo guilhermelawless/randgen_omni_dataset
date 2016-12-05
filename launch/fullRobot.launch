@@ -1,6 +1,5 @@
 <launch>
-    <node name="OMNI1_robot" pkg="randgen_omni_dataset" type="robot">
-
+    <node name="OMNI1_robot" pkg="randgen_omni_dataset" type="robot" output="log">
     </node>
 
     <node name="OMNI_odometry" pkg="randgen_omni_dataset" type="odometry">

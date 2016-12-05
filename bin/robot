@@ -4,7 +4,6 @@ import rospy
 from math import pi
 from randgen_omni_dataset import robot
 
-RATE = 33
 LOG_LEVEL = rospy.DEBUG
 
 if __name__ == '__main__':

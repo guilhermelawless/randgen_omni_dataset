@@ -1,10 +1,11 @@
 import rospy
 import math
 from math import pi, fmod
-import numpy
 import tf.transformations, tf.broadcaster, tf.listener
 from geometry_msgs.msg import PoseWithCovariance, PoseStamped, Point, PointStamped
-from nav_msgs.msg import Odometry
+from std_msgs.msg import Header
+from nav_msgs.msg import Odometry as odometryMsg
+from randgen_omni_dataset.odometry import customOdometryMsg
 from visualization_msgs.msg import MarkerArray, Marker
 from read_omni_dataset.msg import BallData, LRMLandmarksData
 
@@ -48,6 +49,8 @@ class Robot(object):
     # The Robot class holds the various robot components, such as odometry, laser-based observations, etc
 
     def __init__(self, init_pose, name='OMNI_DEFAULT', freq=10):
+        # type: (dict, str, int) -> None
+
         # initial robot pose
         self.pose = init_pose
 
@@ -55,20 +58,18 @@ class Robot(object):
         assert isinstance(name, str)
         assert isinstance(self.pose, dict)
 
-        # rate
-        self.rate = rospy.Rate(freq)
-
         # robot name and namespace
         self.name = name
         self.namespace = '/' + name
 
         # subscribers
-        self.sub_odometry = rospy.Subscriber(self.namespace + '/odometry', Odometry, callback=self.odometry_callback,
+        self.sub_odometry = rospy.Subscriber(self.namespace + '/genOdometry', customOdometryMsg, callback=self.odometry_callback,
                                              queue_size=100)
         self.sub_target = rospy.Subscriber('/target/gtPose', PointStamped, callback=self.target_callback,
                                            queue_size=1)
 
         # publishers
+        self.pub_odometry = rospy.Publisher(self.namespace + '/odometry', odometryMsg, queue_size=100)
         self.pub_gt_rviz = rospy.Publisher(self.namespace + '/gtPose', PoseStamped, queue_size=10)
         self.pub_landmark_observations = rospy.Publisher(self.namespace + '/landmarkObs', MarkerArray, queue_size=5)
         self.pub_target_observation = rospy.Publisher(self.namespace + '/targetObs', Marker, queue_size=5)
@@ -96,13 +97,26 @@ class Robot(object):
         # set not running
         self.is_running = False
 
+        # odometry msg
+        self.msg_odometry = odometryMsg()
+        self.msg_odometry.header = Header()
+        self.msg_odometry.pose = PoseWithCovariance()
+
         # GT pose
         self.msg_GT = PoseWithCovariance()
         self.msg_GT_rviz = PoseStamped()
         self.msg_GT_rviz.header.frame_id = self.frame
 
     def odometry_callback(self, msg):
-        # add to current pose
+        # type: (customOdometryMsg) -> None
+
+        # convert to normal odometry msg, self.msg_odometry will be updated
+        self.convert_odometry(msg)
+
+        # publish the odometry in standard format
+        self.pub_odometry.publish(self.msg_odometry)
+
+        # add to current pose using custom msg type (easier to add)
         self.add_odometry(msg)
 
         # print as debug
@@ -136,29 +150,32 @@ class Robot(object):
         except rospy.ROSInterruptException:
             pass
 
+    def convert_odometry(self, msg):
+        # type: (customOdometryMsg) -> odometryMsg
+
+        # convert from {translation, rot1, rot2} to our state-space variables {x, y, theta} using previous values
+        self.msg_odometry.header.stamp = msg.header.stamp
+        self.msg_odometry.pose.pose.position.x = msg.translation * math.cos(msg.rot1)
+        self.msg_odometry.pose.pose.position.y = msg.translation * math.sin(msg.rot2)
+        delta_theta = msg.rot1 + msg.rot2
+        quaternion = tf.transformations.quaternion_about_axis(delta_theta, [0, 0, 1])
+        self.msg_odometry.pose.pose.orientation.x = quaternion[0]
+        self.msg_odometry.pose.pose.orientation.y = quaternion[1]
+        self.msg_odometry.pose.pose.orientation.z = quaternion[2]
+        self.msg_odometry.pose.pose.orientation.w = quaternion[3]
+
+        return self.msg_odometry
+
     def add_odometry(self, msg):
-
-        values = {'x': msg.pose.pose.position.x, 'y': msg.pose.pose.position.y}
-        quaternion = (msg.pose.pose.orientation.x,
-                      msg.pose.pose.orientation.y,
-                      msg.pose.pose.orientation.z,
-                      msg.pose.pose.orientation.w)
-
-        # yaw is 3rd values (pos 2)
-        values['theta'] = tf.transformations.euler_from_quaternion(quaternion)[2]
+        # type: (customOdometryMsg) -> None
 
         # update pose
         try:
-            # calculate initial rotation, translation and final rotation
-            initial_rot = math.atan2(values['y'], values['x'])
-            translation = math.hypot(values['x'], values['y'])
-            final_rot = values['theta'] - initial_rot
-
             # rotate, translate, rotate
-            self.pose['theta'] += initial_rot
-            self.pose['x'] += translation * math.cos(self.pose['theta'])
-            self.pose['y'] += translation * math.sin(self.pose['theta'])
-            self.pose['theta'] = normalize_angle(self.pose['theta'] + final_rot)
+            self.pose['theta'] += msg.rot1
+            self.pose['x'] += msg.translation * math.cos(self.pose['theta'])
+            self.pose['y'] += msg.translation * math.sin(self.pose['theta'])
+            self.pose['theta'] = normalize_angle(self.pose['theta'] + msg.rot2)
 
         except TypeError, err:
             rospy.logfatal('TypeError: reason - %s', err)
@@ -200,15 +217,14 @@ class Robot(object):
                                        self.frame,
                                        BASE_FRAME)
 
-        msg = self.msg_GT_rviz
-        msg.header.stamp = stamp
+        self.msg_GT_rviz.header.stamp = stamp
         # everyhing else is 0 because of TF
 
         self.pub_gt_rviz.publish(self.msg_GT_rviz)
 
     def generate_landmark_observations(self):
         marker_id = 0
-        stamp = rospy.Time()
+        stamp = rospy.Time() # last available tf
         markers = MarkerArray()
         lm_point = PointStamped()
         lm_point.header.frame_id = BASE_FRAME

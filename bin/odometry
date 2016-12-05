@@ -5,9 +5,9 @@ from randgen_omni_dataset import odometry
 
 LOG_LEVEL = rospy.DEBUG
 INIT_SEED = None
-NODE_NAME = 'OMNI1_odometry'
-TOPIC = '/OMNI1/odometry'
-SERVICE = '/OMNI1/odometry/change_state'
+NODE_NAME = 'OMNI1_gen_odometry'
+TOPIC = '/OMNI1/genOdometry'
+SERVICE = '/OMNI1/genOdometry/change_state'
 FREQ = 33
 
 if __name__ == '__main__':

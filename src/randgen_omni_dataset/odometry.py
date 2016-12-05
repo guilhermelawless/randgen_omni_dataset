@@ -1,34 +1,31 @@
 import rospy
 import random
-import tf.transformations
 import std_msgs.msg
-from geometry_msgs.msg import PoseWithCovariance
-from nav_msgs.msg import Odometry as odometryMsgType
+from randgen_omni_dataset.msg import CustomOdometry as customOdometryMsg
 from randgen_omni_dataset.srv import SendString, SendStringResponse
 
-MEAN_X_WF = 0.007
-STD_X_WF = 0.1*MEAN_X_WF
-MEAN_Y_WF = 0.000
-STD_Y_WF = 0.00005
-MEAN_THETA_WF = 0.000
-STD_THETA_WF = 0.0001
+MEAN_T_WF = 0.007
+STD_T_WF = 0.1*MEAN_T_WF
+MEAN_R1_WF = 0.000
+STD_R1_WF = 0.0001
+MEAN_R2_WF = 0.000
+STD_R2_WF = 0.0001
 
-MEAN_X_R = 0
-STD_X_R = 0.0001
-MEAN_Y_R = MEAN_Y_WF
-STD_Y_R = STD_Y_WF
-MEAN_THETA_R = 0.01
-STD_THETA_R = 0.1*MEAN_THETA_R
+MEAN_T_R = 0
+STD_T_R = 0.0001
+MEAN_R1_R = 0.005
+STD_R1_R = 0.1*MEAN_R1_R
+MEAN_R2_R = 0.005
+STD_R2_R = 0.1*MEAN_R2_R
 
 
 class AbstractOdometryStateVar(object):
     # The AbstractOdometryStateVar establishes the properties and methods for one state space variable
-    # Variables include x, y, theta in this case
     # Deriving classes should implement, for instance, based on the rng distribution type
 
-    def __init__(self, type, name):
+    def __init__(self, var_type, name):
         # type of this variable
-        self.type = type
+        self.type = var_type
 
         # name of this variable
         self.name = name
@@ -38,9 +35,9 @@ class AbstractOdometryStateVar(object):
 
 
 class GaussianOdometryStateVar(AbstractOdometryStateVar):
-    def __init__(self, type, name, mean, sigma):
+    def __init__(self, var_type, name, mean, sigma):
         # Call the base class init
-        AbstractOdometryStateVar.__init__(self, type, name)
+        AbstractOdometryStateVar.__init__(self, var_type, name)
 
         # Save properties of mean and sigma
         self.mu = mean
@@ -52,20 +49,21 @@ class GaussianOdometryStateVar(AbstractOdometryStateVar):
 
 
 class Odometry(object):
-    # The Odometry class will give a random value of variation for the x, y and theta state-space variables
-    # These variables define the robot pose
+    # The Odometry class will give a random value of variation for the translation and rotation variables
+    # These variables define the next robot pose when also considering the previous pose
     # 2 states for the generation are considered:
-    #   - Rotate: little variation in x and y, high for theta
-    #   - WalkForward: little variation in theta and y, high for x
+    #   - Rotate: little variation in translation, high in rotation
+    #   - WalkForward: little variation in rotation, high in translation
     # You can use the Odometry object in 2 ways:
     #   - It implements rate.sleep() in its loop which will block if ran in main thread, or can be multi-threaded
     #   - Using the get_rand_all, build_msg, and publisher.publish methods to do at your own pace
 
     stateTypes = dict(WalkForward=0, Rotate=1)
-    varTypes = dict(x=0, y=1, theta=2)
+    invStateTypes = {0: 'WalkFoward', 1: 'Rotate'}
+    varTypes = dict(t=0, r1=1, r2=2)
 
     def __init__(self, seed=None, topic='/odometry/', service='/odometry/change_state', freq=10):
-        # type: (int, str, str, int) -> Odometry
+        # type: (int, str, str, int) -> None
         """
 
         :param seed: if specified, the RNG seed will be fixed (useful for debugging)
@@ -81,18 +79,18 @@ class Odometry(object):
         random.seed(seed)
 
         # each variable is a list corresponding to the state
-        self.walkForward = [GaussianOdometryStateVar('x', 'x_WalkForward', MEAN_X_WF, STD_X_WF),
-                            GaussianOdometryStateVar('y', 'y_WalkForward', MEAN_Y_WF, STD_Y_WF),
-                            GaussianOdometryStateVar('theta', 'theta_WalkForward', MEAN_THETA_WF, STD_THETA_WF)]
+        self.walkForward = [GaussianOdometryStateVar('t',   't_WalkForward',    MEAN_T_WF,  STD_T_WF),
+                            GaussianOdometryStateVar('r1',  'r1_WalkForward',   MEAN_R1_WF, STD_R2_WF),
+                            GaussianOdometryStateVar('r2',  'r2_WalkForward',   MEAN_R2_WF, STD_R2_WF)]
 
-        self.rotate = [ GaussianOdometryStateVar('x', 'x_Rotate', MEAN_X_R, STD_X_R),
-                        GaussianOdometryStateVar('y', 'y_Rotate', MEAN_Y_R, STD_Y_R),
-                        GaussianOdometryStateVar('theta', 'theta_Rotate', MEAN_THETA_R, STD_THETA_R)]
+        self.rotate = [ GaussianOdometryStateVar('t',   't_Rotate',     MEAN_T_R,   STD_T_R),
+                        GaussianOdometryStateVar('r1',  'r1_Rotate',    MEAN_R1_R,  STD_R1_R),
+                        GaussianOdometryStateVar('r2',  'r2_Rotate',    MEAN_R2_R,  STD_R2_R)]
 
         # get a list with all variables
         self.var_list = []
         self.var_list.insert(Odometry.stateTypes['WalkForward'], self.walkForward)
-        self.var_list.insert(Odometry.stateTypes['Rotate'],self.rotate)
+        self.var_list.insert(Odometry.stateTypes['Rotate'], self.rotate)
 
         # list of all values
         self.values = dict()
@@ -101,7 +99,7 @@ class Odometry(object):
         self.topic = str(topic)
 
         # publisher of odometry values
-        self.publisher = rospy.Publisher(topic, odometryMsgType, queue_size=100)
+        self.publisher = rospy.Publisher(topic, customOdometryMsg, queue_size=100)
 
         # service to change state
         self.service = rospy.Service(service, SendString, self.service_callback)
@@ -110,9 +108,8 @@ class Odometry(object):
         self.rate = rospy.Rate(freq)
 
         # initiate the msg to be quicker in the loop
-        self.msg = odometryMsgType()
+        self.msg = customOdometryMsg()
         self.msg.header = std_msgs.msg.Header()
-        self.msg.pose = PoseWithCovariance()
 
         # flag for running if loop is used
         self.is_running = False
@@ -158,23 +155,23 @@ class Odometry(object):
         return ret
 
     def get_rand_all(self, values=None):
-        # type: (dictionary) -> dictionary
+        # type: (dict) -> dict
         if values is None:
             values = self.values
 
         # populate values dictionary
         try:
-            values['x'] = self.get_rand_type('x')
-            values['y'] = self.get_rand_type('y')
-            values['theta'] = self.get_rand_type('theta')
+            values['t'] = self.get_rand_type('t')
+            values['r1'] = self.get_rand_type('r1')
+            values['r2'] = self.get_rand_type('r2')
         except KeyError:
-            rospy.logfatal('Dictionary doesnt have x, y or theta')
+            rospy.logfatal('Dictionary doesnt have t, r1 or r2')
             raise
 
         return values
 
     def build_msg(self, msg=None, values=None, stamp=None):
-        # type: (nav_msgs.msg.Odometry, dictionary, Time) -> nav_msgs.msg.Odometry
+        # type: (odometryMsgType, dict, rospy.Time) -> odometryMsgType
         if values is None:
             values = self.values
 
@@ -184,20 +181,17 @@ class Odometry(object):
         if stamp is None:
             stamp = rospy.Time.now()
 
+        # Insert values into msg
         msg.header.stamp = stamp
-        msg.pose.pose.position.x = values['x']
-        msg.pose.pose.position.y = values['y']
-
-        # obtain quaternion from theta value (rotation about z axis)
-        quaternion = tf.transformations.quaternion_about_axis(values['theta'], [0, 0, 1])
-        msg.pose.pose.orientation.x = quaternion[0]
-        msg.pose.pose.orientation.y = quaternion[1]
-        msg.pose.pose.orientation.z = quaternion[2]
-        msg.pose.pose.orientation.w = quaternion[3]
+        msg.translation = values['t']
+        msg.rot1 = values['r1']
+        msg.rot2 = values['r2']
+        msg.state = Odometry.invStateTypes[self._state]
 
         return msg
 
     def loop_once(self, stamp=None):
+        # type: (rospy.Time) -> None
         # perform one loop without sleeping
 
         # generate new random numbers according to configuration
@@ -215,6 +209,8 @@ class Odometry(object):
             pass
 
     def loop(self):
+        # type: () -> None
+
         # as long as ROS is running
         while not rospy.is_shutdown():
             # if not running stay in this loop
