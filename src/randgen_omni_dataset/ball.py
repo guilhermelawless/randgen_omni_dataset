@@ -98,7 +98,6 @@ class Ball(object):
         self.flag_hover = False
         self.virtual_ground = 0.0
         self.flag_stop = False
-        self.timer_hover.shutdown()
 
     def model_once(self):
         dt = self.t
@@ -140,7 +139,7 @@ class Ball(object):
             self.pose['vz'] = VEL_PULL
             self.virtual_ground = HOVER_HEIGHT
             self.flag_hover = True
-            self.timer_hover = rospy.Timer(rospy.Duration(HOVER_TIME), self.hover_callback)
+            self.timer_hover = rospy.Timer(rospy.Duration(HOVER_TIME), self.hover_callback, oneshot=True)
             rospy.logdebug('Hovering for %ds' % HOVER_TIME)
 
         # Will the ball hit the ground?
