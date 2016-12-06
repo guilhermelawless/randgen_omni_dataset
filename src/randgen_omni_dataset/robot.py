@@ -2,7 +2,8 @@ import rospy
 import math
 import random
 from math import pi, fmod
-import tf, tf.transformations
+import tf
+import tf.transformations
 from geometry_msgs.msg import PoseWithCovariance, PoseStamped, Point, PointStamped, Quaternion
 from std_msgs.msg import Header
 from nav_msgs.msg import Odometry as odometryMsg
@@ -10,7 +11,7 @@ from randgen_omni_dataset.odometry import customOdometryMsg
 from visualization_msgs.msg import MarkerArray, Marker
 from randgen_omni_dataset.srv import *
 
-HEIGHT = 0.0
+HEIGHT = 0.81
 BASE_FRAME = 'world'
 TWO_PI = 2.0 * pi
 LAST_TF_TIME = 0
@@ -324,6 +325,7 @@ class Robot(object):
         for lm in self.lm_list:
             lm_point.point.x = lm[0]
             lm_point.point.y = lm[1]
+            lm_point.point.z = HEIGHT
 
             # Calc. the observation in the local frame
             try:

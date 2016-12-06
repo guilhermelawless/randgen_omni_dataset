@@ -7,7 +7,7 @@
         <rosparam param="initial_pose"> {'x': 2, 'y': -0.6, 'z': 1.2} </rosparam>
         <param name='freq_pub' value='100'/>
     </node>
-    
+
     <node name="OMNI1" pkg="randgen_omni_dataset" type="robot" output="screen">
         <rosparam param="initial_pose"> {'x': 2, 'y': -0.6, 'theta': 1.2}</rosparam>
     </node>
@@ -21,5 +21,7 @@
     <node name="OMNI2_odometry" pkg="randgen_omni_dataset" type="odometry" output="screen">
         <param name="topic" value="/OMNI2/genOdometry"/>
     </node>
+
+    <node name="omni_custom_msg" pkg="randgen_omni_dataset" type="omni_custom" output="screen"/>
 
 </launch>

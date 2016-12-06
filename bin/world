@@ -8,7 +8,7 @@ LOG_LEVEL = rospy.DEBUG
 
 if __name__ == '__main__':
 
-    rospy.init_node('~', log_level=LOG_LEVEL)
+    rospy.init_node('world', log_level=LOG_LEVEL)
 
     landmarks = landmarks.Landmarks(param='/landmarks', topic='/landmarks')
     walls = walls.Walls(param='/walls', topic='/walls')

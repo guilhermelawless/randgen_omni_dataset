@@ -193,6 +193,7 @@ catkin_install_python(
 		bin/ball
 		bin/odometry
 		bin/world
+		bin/omni_custom
 		test/testOdometry
 	DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
