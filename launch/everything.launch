@@ -8,18 +8,18 @@
         <param name='freq_pub' value='100'/>
     </node>
 
-    <node name="OMNI1" pkg="randgen_omni_dataset" type="robot" output="screen">
+    <node name="omni1" pkg="randgen_omni_dataset" type="robot" output="screen">
         <rosparam param="initial_pose"> {'x': 2, 'y': -0.6, 'theta': 1.2}</rosparam>
     </node>
-    <node name="OMNI1_odometry" pkg="randgen_omni_dataset" type="odometry" output="screen">
-        <param name="topic" value="/OMNI1/genOdometry"/>
+    <node name="omni1_odometry" pkg="randgen_omni_dataset" type="odometry" output="screen">
+        <param name="topic" value="/omni1/genOdometry"/>
     </node>
 
-    <node name="OMNI2" pkg="randgen_omni_dataset" type="robot" output="screen">
+    <node name="omni2" pkg="randgen_omni_dataset" type="robot" output="screen">
         <rosparam param="initial_pose"> {'x': 1, 'y': 0.5, 'theta': 3.14}</rosparam>
     </node>
-    <node name="OMNI2_odometry" pkg="randgen_omni_dataset" type="odometry" output="screen">
-        <param name="topic" value="/OMNI2/genOdometry"/>
+    <node name="omni2_odometry" pkg="randgen_omni_dataset" type="odometry" output="screen">
+        <param name="topic" value="/omni2/genOdometry"/>
     </node>
 
     <node name="omni_custom_msg" pkg="randgen_omni_dataset" type="omni_custom" output="screen"/>

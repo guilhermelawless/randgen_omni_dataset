@@ -172,7 +172,7 @@ class Robot(object):
                 continue
 
             # add subscriber to its pose, with an additional argument concerning the list position
-            other_name = 'OMNI'+idx_s
+            other_name = 'omni'+idx_s
             rospy.Subscriber(other_name + '/gtPose', PoseStamped, self.other_robots_callback, list_ctr)
             self.otherRobots.append((other_name, False))
             # wait for odometry service to be available before continue

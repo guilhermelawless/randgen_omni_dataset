@@ -6,7 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-      Splitter Ratio: 0.5
+        - /OMNI11/targetObervations1/Namespaces1
+      Splitter Ratio: 0.502778
     Tree Height: 776
   - Class: rviz/Selection
     Name: Selection
@@ -123,12 +124,12 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /OMNI1/gtPose
+          Topic: /omni1/gtPose
           Unreliable: false
           Value: true
         - Class: rviz/MarkerArray
           Enabled: true
-          Marker Topic: /OMNI1/landmarkObs
+          Marker Topic: /omni1/landmarkObs
           Name: landmarkObservations
           Namespaces:
             /OMNI1/landmarkObs: true
@@ -136,7 +137,7 @@ Visualization Manager:
           Value: true
         - Class: rviz/Marker
           Enabled: true
-          Marker Topic: /OMNI1/targetObs
+          Marker Topic: /omni1/targetObs
           Name: targetObervations
           Namespaces:
             /OMNI1/targetObs: true
@@ -158,12 +159,12 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /OMNI2/gtPose
+          Topic: /omni2/gtPose
           Unreliable: false
           Value: true
         - Class: rviz/MarkerArray
           Enabled: true
-          Marker Topic: /OMNI2/landmarkObs
+          Marker Topic: /omni2/landmarkObs
           Name: landmarkObservations
           Namespaces:
             /OMNI2/landmarkObs: true
@@ -171,7 +172,7 @@ Visualization Manager:
           Value: true
         - Class: rviz/Marker
           Enabled: true
-          Marker Topic: /OMNI2/targetObs
+          Marker Topic: /omni2/targetObs
           Name: targetObervations
           Namespaces:
             /OMNI2/targetObs: true
@@ -203,22 +204,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 26.0016
+      Distance: 24.4076
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.78688
-        Y: 0.233864
-        Z: -0.170671
+        X: 3.1062
+        Y: 1.04307
+        Z: 0.0303318
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.4448
+      Pitch: 1.5698
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.72859
+      Yaw: 4.74856
     Saved: ~
 Window Geometry:
   Displays:

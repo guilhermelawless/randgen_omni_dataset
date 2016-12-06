@@ -39,7 +39,7 @@ class OmniCustom():
             # robot ID and name
             idx += 1
             idx_s = str(idx)
-            name = 'OMNI' + idx_s
+            name = 'omni' + idx_s
 
             # add subscriber to its pose, with an additional argument concerning the list position
             rospy.Subscriber(name + '/gtPose', PoseStamped, self.robot_pose_callback, list_ctr)
