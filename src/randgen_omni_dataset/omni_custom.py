@@ -1,7 +1,7 @@
 import rospy
 import tf
 from read_omni_dataset.msg import *
-from geometry_msgs.msg import PoseStamped, PoseWithCovariance
+from geometry_msgs.msg import PoseStamped, PoseWithCovariance, PointStamped
 
 GLOBAL_FRAME = 'world'
 
@@ -14,6 +14,7 @@ class OmniCustom():
 
         # initiate main GT message
         self.gt = LRMGTData()
+        self.gt.orangeBall3DGTposition.found = False
 
         # figure out information on existing robots
         try:
@@ -28,7 +29,7 @@ class OmniCustom():
         # create a tf listener
         self.listener = tf.TransformListener()
 
-        # iniate the publisher for the GT msg
+        # initiate the publisher for the GT msg
         self.publisher_gt = rospy.Publisher(topic_gt, LRMGTData, queue_size=10)
 
         # iterate through the playing robots list, building our list of PoseWithCovariance msgs
@@ -59,6 +60,9 @@ class OmniCustom():
         # save number of robots available
         self.numberRobots = list_ctr
 
+        # subscriber to target gt data
+        self.sub_target = rospy.Subscriber('/target/gtPose', PointStamped, self.target_pose_callback, queue_size=5)
+
     def robot_pose_callback(self, msg, list_id):
         # type: (PoseStamped, int) -> None
 
@@ -83,3 +87,16 @@ class OmniCustom():
         # if all robots have been found, publish the GT message
         if self.numberRobots == sum(found is True for found in self.gt.foundOMNI):
             self.publisher_gt.publish(self.gt)
+
+    def target_pose_callback(self, msg):
+        # type: (PointStamped) -> None
+
+        # update our GT message with the new information
+        self.gt.orangeBall3DGTposition.found = True
+        self.gt.orangeBall3DGTposition.header.stamp = msg.header.stamp
+        self.gt.orangeBall3DGTposition.x = msg.point.x
+        self.gt.orangeBall3DGTposition.y = msg.point.y
+        self.gt.orangeBall3DGTposition.z = msg.point.z
+
+        # publish this message
+        self.publisher_gt.publish(self.gt)
