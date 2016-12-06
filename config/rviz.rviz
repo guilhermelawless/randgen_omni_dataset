@@ -48,14 +48,13 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /landmarks
-      Name: Landmarks
-      Namespaces:
-        landmarks_1: true
-      Queue Size: 100
-      Value: true
+    - Class: rviz/Axes
+      Enabled: false
+      Length: 5
+      Name: Axes
+      Radius: 0.1
+      Reference Frame: <Fixed Frame>
+      Value: false
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
@@ -90,21 +89,26 @@ Visualization Manager:
       Topic: /target/gtPose
       Unreliable: false
       Value: true
-    - Alpha: 1
-      Axes Length: 1
-      Axes Radius: 0.1
-      Class: rviz/Pose
-      Color: 255; 25; 0
+    - Class: rviz/Group
+      Displays:
+        - Class: rviz/MarkerArray
+          Enabled: true
+          Marker Topic: /landmarks
+          Name: Landmarks
+          Namespaces:
+            landmarks_1: true
+          Queue Size: 100
+          Value: true
+        - Alpha: 1
+          Class: rviz/Polygon
+          Color: 25; 255; 0
+          Enabled: true
+          Name: Walls
+          Topic: /walls
+          Unreliable: false
+          Value: true
       Enabled: true
-      Head Length: 0.3
-      Head Radius: 0.1
-      Name: Pose
-      Shaft Length: 1
-      Shaft Radius: 0.05
-      Shape: Arrow
-      Topic: /OMNI2/gtPose
-      Unreliable: false
-      Value: true
+      Name: World
     - Class: rviz/Group
       Displays:
         - Alpha: 1
@@ -199,22 +203,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 25.7169
+      Distance: 26.0016
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.753379
-        Y: 0.191169
-        Z: -0.671415
+        X: 1.78688
+        Y: 0.233864
+        Z: -0.170671
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.5698
+      Pitch: 1.4448
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.18045
+      Yaw: 4.72859
     Saved: ~
 Window Geometry:
   Displays:
