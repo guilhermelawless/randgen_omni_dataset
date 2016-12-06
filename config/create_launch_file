@@ -1,0 +1,108 @@
+#! /usr/bin/env python
+
+import argparse
+import math
+import random
+import rospkg
+import xml.etree.cElementTree as ET
+
+THETA_RANGE = (-math.pi, math.pi)
+PKG = 'randgen_omni_dataset'
+
+
+def dist(x1, y1, x2, y2):
+    return math.sqrt(math.pow(x2-x1, 2) + math.pow(y2-y1, 2))
+
+
+class Robot:
+    def __init__(self, r_id, x, y, theta, radius):
+        self.id = r_id
+        self.name = 'omni' + str(self.id)
+        self.x = x
+        self.y = y
+        self.theta = theta
+        self.radius = radius
+
+    def check_collisions(self, r_list):
+        for robot in r_list:
+            if dist(self.x, robot.x, self.y, robot.y) < 2*self.radius:
+                # collision detected with robot x
+                return robot.id
+
+        # no collisions detected
+        return -1
+
+    def get_dict(self):
+        return {'x': self.x, 'y': self.y, 'theta': self.theta}
+
+
+if __name__ == '__main__':
+
+    # parse arguments from command line
+    # need number of robots, world limits, filename, robot radius
+    parser = argparse.ArgumentParser(description='Process arguments to create launch file')
+    parser.add_argument('N', type=int, help='Number of robots desired')
+    parser.add_argument('-R', '--radius', type=float, default=0.5, help='Robot radius to be considered')
+    parser.add_argument('-f', '--file', type=str, default='new.launch', help='Desired filename to be placed in launch directory')
+    parser.add_argument('-l', '--left', type=float, default=-0.0, help='Left limit to place robots')
+    parser.add_argument('-r', '--right', type=float, default=10.0, help='Right limit to place robots')
+    parser.add_argument('-u', '--up', type=float, default=5.0, help='Up limit to place robots')
+    parser.add_argument('-d', '--down', type=float, default=-5.0, help='Down limit to place robots')
+    args = parser.parse_args()
+
+    # create robots
+    robot_list = []
+    for n in range(1, args.N+1):
+        print 'Creating robot %d' % n
+
+        robot = Robot(n, random.uniform(args.left, args.right), random.uniform(args.down, args.up),
+                      random.uniform(*THETA_RANGE), args.radius)
+
+        tries = 0
+        while robot.check_collisions(robot_list) is not -1:
+            tries += 1
+            col = robot.check_collisions(robot_list)
+            print 'Try #%d - detected collision with robot %d at {%f , %f}' % (tries, col, robot_list[col-1].x, robot_list[col-1].y)
+            robot.x = random.uniform(args.left, args.right)
+            robot.y = random.uniform(args.down, args.up)
+            print 'Trying position {%f, %f}' % (robot.x, robot.y)
+
+        # no longer colliding, insert into list and print location
+        robot_list.append(robot)
+        print 'Robot %d created at {%f,%f,%f}' % (n, robot.x, robot.y, robot.theta)
+
+    # robots have been assigned positions
+    # generate a ball anywhere (x, y, z)
+    ball = {'x': random.uniform(args.left, args.right),
+            'y': random.uniform(args.down, args.up),
+            'z': random.uniform(0.0, 3.0)}
+
+
+    # use rospkg to find the directory of this package
+    rospack = rospkg.RosPack()
+    path = rospack.get_path('randgen_omni_dataset')
+    path += '/launch/' + args.file
+
+    # now write the launch file
+    launch = ET.Element("launch")
+
+    ET.SubElement(launch, 'rosparam', param='PLAYING_ROBOTS').text = str([1]*args.N)
+    ET.SubElement(launch, 'include', file='$(find randgen_omni_dataset)/launch/world.launch')
+    ball_el = ET.SubElement(launch, 'node', name='ball', pkg=PKG, type='ball')
+    ET.SubElement(ball_el, 'rosparam', param='initial_pose').text = str(ball)
+    ET.SubElement(ball_el, 'param', name='freq_pub', value='100')
+
+    # for all robots
+    for robot in robot_list:
+        node_robot = ET.SubElement(launch, 'node', name=robot.name, pkg=PKG, type='robot', output='screen')
+        ET.SubElement(node_robot, 'rosparam', param='initial_pose').text = str(robot.get_dict())
+
+        node_odometry = ET.SubElement(launch, 'node', name=robot.name+'_odometry', pkg=PKG, type='odometry', output='screen')
+        ET.SubElement(node_odometry, 'param', name='topic', value='/'+robot.name+'/genOdometry')
+
+    # custom msg node
+    ET.SubElement(launch, 'node', name='omni_custom_msg', pkg=PKG, type='omni_custom', output='screen')
+
+    # print the tree to the file in the path variable
+    tree = ET.ElementTree(launch)
+    tree.write(path)

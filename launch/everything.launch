@@ -23,5 +23,4 @@
     </node>
 
     <node name="omni_custom_msg" pkg="randgen_omni_dataset" type="omni_custom" output="screen"/>
-
 </launch>
