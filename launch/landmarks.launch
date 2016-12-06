@@ -1,5 +1,0 @@
-<launch>
-    <node name="landmarks" pkg="randgen_omni_dataset" type="landmarks">
-        <rosparam command="load" param="/" file="$(find randgen_omni_dataset)/config/landmarks.yaml"/>
-    </node>
-</launch>

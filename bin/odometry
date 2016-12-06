@@ -5,7 +5,7 @@ from randgen_omni_dataset import odometry
 
 LOG_LEVEL = rospy.INFO
 INIT_SEED = None
-FREQ = 33
+FREQ_DEF = 33
 
 if __name__ == '__main__':
     # Init node - set in launch file for a different name
@@ -13,11 +13,12 @@ if __name__ == '__main__':
 
     # Get useful parameters
     topic = rospy.get_param('~topic')
+    freq = rospy.get_param('~freq', FREQ_DEF)
 
     service = topic + '/change_state'
 
     # Odometry object
-    odom = odometry.Odometry(freq=FREQ, topic=topic, service=service)
+    odom = odometry.Odometry(freq=freq, topic=topic, service=service)
     odom.run(True)
 
     # Start odom loop, will exit when shutdown

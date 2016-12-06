@@ -4,14 +4,16 @@ import rospy
 from randgen_omni_dataset import ball
 
 LOG_LEVEL = rospy.DEBUG
-FREQ_PUB = 33
-INIT_POSE = {'x': 1, 'y': 2, 'z': 3}
+FREQ_PUB_DEF = 33
 
 if __name__ == '__main__':
 
     rospy.init_node('ball', log_level=LOG_LEVEL)
 
-    ball = ball.Ball(init_pose=INIT_POSE, freq_pub=FREQ_PUB)
+    init_pose = rospy.get_param('~initial_pose', {'x': 0, 'y': 0, 'z': 0})
+    freq_pub = rospy.get_param('~freq_pub', FREQ_PUB_DEF)
+
+    ball = ball.Ball(init_pose=init_pose, freq_pub=FREQ_PUB_DEF)
     ball.run(True)
     try:
         ball.loop()

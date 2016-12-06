@@ -1,6 +1,0 @@
-#! /usr/bin/env python
-
-import randgen_omni_dataset.hello
-
-if __name__ == '__main__':
-    randgen_omni_dataset.hello.say('my little friend!')

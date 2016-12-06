@@ -189,11 +189,10 @@ include_directories(
 
 catkin_install_python(
 	PROGRAMS
-		bin/hello
 		bin/robot
 		bin/ball
 		bin/odometry
-		bin/landmarks
+		bin/world
 		test/testOdometry
 	DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 

@@ -1,12 +1,15 @@
 <launch>
     <rosparam param="PLAYING_ROBOTS"> [1, 1] </rosparam>
-    <rosparam param="/walls">{'left': -5.0, 'right': 5.0, 'up': 5.0, 'down': -5.0}</rosparam>
 
-    <include file="$(find randgen_omni_dataset)/launch/landmarks.launch"/>
-    <node name="ball" pkg="randgen_omni_dataset" type="ball"/>
+    <include file="$(find randgen_omni_dataset)/launch/world.launch"/>
+    
+    <node name="ball" pkg="randgen_omni_dataset" type="ball">
+        <rosparam param="initial_pose"> {'x': 2, 'y': -0.6, 'z': 1.2} </rosparam>
+        <param name='freq_pub' value='100'/>
+    </node>
     
     <node name="OMNI1" pkg="randgen_omni_dataset" type="robot" output="screen">
-        <rosparam param="initial_pose"> {'x': -2, 'y': 0.5, 'theta': 0}</rosparam>
+        <rosparam param="initial_pose"> {'x': 2, 'y': -0.6, 'theta': 1.2}</rosparam>
     </node>
     <node name="OMNI1_odometry" pkg="randgen_omni_dataset" type="odometry" output="screen">
         <param name="topic" value="/OMNI1/genOdometry"/>
