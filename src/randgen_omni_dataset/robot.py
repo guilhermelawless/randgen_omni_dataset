@@ -9,9 +9,8 @@ from nav_msgs.msg import Odometry as odometryMsg
 from randgen_omni_dataset.odometry import customOdometryMsg
 from visualization_msgs.msg import MarkerArray, Marker
 from randgen_omni_dataset.srv import *
-from read_omni_dataset.msg import BallData, LRMLandmarksData
 
-HEIGHT = 0.81
+HEIGHT = 0.0
 BASE_FRAME = 'world'
 TWO_PI = 2.0 * pi
 LAST_TF_TIME = 0
@@ -294,22 +293,6 @@ class Robot(object):
     def pose_to_str(self):
         return 'Current pose:\nx={0}\ny={1}\ntheta={2}'.format(self.pose['x'], self.pose['y'], self.pose['theta'])
 
-    def pose_to_omni_gt(self):
-        msg = self.msg_GT
-
-        # x and y is copy-paste
-        msg.pose.position.x = self.pose['x']
-        msg.pose.position.y = self.pose['y']
-
-        # obtain quaternion from theta value (rotation about z axis)
-        quaternion = tf.transformations.quaternion_about_axis(self.pose['theta'], [0, 0, 1])
-        msg.pose.pose.orientation.x = quaternion[0]
-        msg.pose.pose.orientation.y = quaternion[1]
-        msg.pose.pose.orientation.z = quaternion[2]
-        msg.pose.pose.orientation.w = quaternion[3]
-
-        return msg
-
     def publish_rviz_gt(self, stamp=None):
         if stamp is None:
             stamp = rospy.Time.now()
@@ -325,7 +308,7 @@ class Robot(object):
                                        BASE_FRAME)
 
         self.msg_GT_rviz.header.stamp = stamp
-        # everyhing else is 0 because of TF
+        # everyhing else is 0 because of TF local frame
 
         self.pub_gt_rviz.publish(self.msg_GT_rviz)
 
