@@ -1,10 +1,13 @@
 import rospy
 import tf
+import random
 from read_omni_dataset.msg import *
-from geometry_msgs.msg import PoseStamped, PoseWithCovariance, PointStamped
+from geometry_msgs.msg import PoseStamped, PoseWithCovariance, PointStamped, Point
+from visualization_msgs.msg import Marker, MarkerArray
+from randgen_omni_dataset.robot import norm2
 
 GLOBAL_FRAME = 'world'
-
+MAX_DIST = 5.0
 
 class OmniCustom():
     # This class will transform messages and TFs to our custom msg format for the OMNI dataset
@@ -34,6 +37,7 @@ class OmniCustom():
 
         # iterate through the playing robots list, building our list of PoseWithCovariance msgs
         list_ctr = 0
+        self.publishers_lm = []
         for idx, running in enumerate(playing_robots):
 
             # robot ID and name
@@ -43,6 +47,12 @@ class OmniCustom():
 
             # add subscriber to its pose, with an additional argument concerning the list position
             rospy.Subscriber(name + '/gtPose', PoseStamped, self.robot_pose_callback, list_ctr)
+
+            # initiate the publisher for the landmarks observations msg
+            self.publishers_lm.append(rospy.Publisher(name + '/landmarksobservations', LRMLandmarksData, queue_size=10))
+
+            # add subscriber to the landmark observations with argument to list id
+            rospy.Subscriber(name + '/landmarkObs', MarkerArray, self.landmarks_callback, list_ctr)
 
             # add a new PoseWithCovariance object to our poseOMNI list in the GT message
             self.gt.poseOMNI.append(PoseWithCovariance())
@@ -100,3 +110,30 @@ class OmniCustom():
 
         # publish this message
         self.publisher_gt.publish(self.gt)
+
+    def landmarks_callback(self, msg, list_id):
+        # type: (MarkerArray) -> None
+
+        # create msg and insert information
+        lm_msg = LRMLandmarksData()
+        lm_msg.header.stamp = rospy.Time.now()
+
+        for marker in msg.markers:
+            # Our point of interest is the 2nd in the points list
+            point = marker.points[1]
+
+            # Add x and y
+            lm_msg.x.append(point.x)
+            lm_msg.y.append(point.y)
+
+            # Simulate the area expected as a function of distance to landmark with a little randomness
+            dist = norm2(point.x, point.y)
+            lm_msg.AreaLandMarkExpectedinPixels.append(MAX_DIST)
+            # randomness is currently a number between -1 and 1. It checks for minimum 0 and max MAX_DIST
+            lm_msg.AreaLandMarkActualinPixels.append(max(0, min(dist + (random.random()*2 - 1), MAX_DIST)))
+
+            # Add found
+            lm_msg.found.append(True)
+
+        # publish with updated information
+        self.publishers_lm[list_id].publish(lm_msg)

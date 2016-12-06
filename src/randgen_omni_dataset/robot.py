@@ -321,7 +321,7 @@ class Robot(object):
         lm_point.header.frame_id = BASE_FRAME
         lm_point.header.stamp = stamp
 
-        # for all landmarks (for now only 1, debug)
+        # for all landmarks
         for lm in self.lm_list:
             lm_point.point.x = lm[0]
             lm_point.point.y = lm[1]
