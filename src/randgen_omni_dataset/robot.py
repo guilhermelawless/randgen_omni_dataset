@@ -221,7 +221,10 @@ class Robot(object):
         self.convert_odometry(msg)
 
         # publish the odometry in standard format
-        self.pub_odometry.publish(self.msg_odometry)
+        try:
+            self.pub_odometry.publish(self.msg_odometry)
+        except rospy.ROSException, err:
+            rospy.logdebug('ROSException - %s', err)
 
         # add to current pose using custom msg type (easier to add)
         self.add_odometry(msg)
@@ -312,7 +315,10 @@ class Robot(object):
         self.msg_GT_rviz.header.stamp = stamp
         # everyhing else is 0 because of TF local frame
 
-        self.pub_gt_rviz.publish(self.msg_GT_rviz)
+        try:
+            self.pub_gt_rviz.publish(self.msg_GT_rviz)
+        except rospy.ROSException, err:
+            rospy.logdebug('ROSException - %s', err)
 
     def generate_landmark_observations(self, event):
         marker_id = 0
@@ -345,7 +351,10 @@ class Robot(object):
             markers.markers.append(marker)
             marker_id += 1
 
-        self.pub_landmark_observations.publish(markers)
+        try:
+            self.pub_landmark_observations.publish(markers)
+        except rospy.ROSException, err:
+            rospy.logdebug('ROSException - %s', err)
 
     def generate_target_observation(self, event):
         if self.target_pose is None:
@@ -360,7 +369,7 @@ class Robot(object):
         try:
             target_local = tf.TransformerROS.transformPoint(self.listener, self.frame, self.target_pose)
         except tf.Exception, err:
-            rospy.logwarn('TF Error - %s', err)
+            rospy.logdebug('TF Error - %s', err)
             return
 
         # create a marker arrow to connect robot and landmark
@@ -371,7 +380,10 @@ class Robot(object):
         marker.id = marker_id
         marker.color.g = 1.0
 
-        self.pub_target_observation.publish(marker)
+        try:
+            self.pub_target_observation.publish(marker)
+        except rospy.ROSException, err:
+            rospy.logdebug('ROSException - %s', err)
 
     def other_robots_callback(self, msg, list_id):
         # Replace tuple with a new tuple with the same name and a new PoseStamped
@@ -389,7 +401,7 @@ class Robot(object):
                 msg.header.stamp = self.listener.getLatestCommonTime(self.frame, msg.header.frame_id)
                 new_pose = self.listener.transformPose(self.frame, msg)
             except tf.Exception, err:
-                rospy.logwarn("TF Exception when transforming other robots: %s", err)
+                rospy.logdebug("TF Exception when transforming other robots - %s", err)
                 continue
 
             dist = norm2(new_pose.pose.position.x, new_pose.pose.position.y)

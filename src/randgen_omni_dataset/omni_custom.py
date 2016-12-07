@@ -29,6 +29,9 @@ class OmniCustom():
             rospy.logerr('Value of %s not set', err)
             raise
 
+        # save number of robots available
+        self.numberRobots = len(playing_robots)
+
         # create a tf listener
         self.listener = tf.TransformListener()
 
@@ -46,6 +49,13 @@ class OmniCustom():
             idx_s = str(idx)
             name = 'omni' + idx_s
 
+            # add a new PoseWithCovariance object to our poseOMNI list in the GT message
+            self.gt.poseOMNI.append(PoseWithCovariance())
+
+            # add a new bool to our foundOMNI list in the GT message
+            # will be True when first message comes
+            self.gt.foundOMNI.append(False)
+
             # add subscriber to its pose, with an additional argument concerning the list position
             rospy.Subscriber(name + '/gtPose', PoseStamped, self.robot_pose_callback, list_ctr)
 
@@ -61,21 +71,11 @@ class OmniCustom():
             # add subscriber to the target observations with argument to list id
             rospy.Subscriber(name + '/targetObs', Marker, self.target_callback, list_ctr)
 
-            # add a new PoseWithCovariance object to our poseOMNI list in the GT message
-            self.gt.poseOMNI.append(PoseWithCovariance())
-
-            # add a new bool to our foundOMNI list in the GT message
-            # will be True when first message comes
-            self.gt.foundOMNI.append(False)
-
             # wait for odometry service to be available before continue
             rospy.wait_for_service(name + '/genOdometry/change_state')
 
             # increment counter
             list_ctr += 1
-
-        # save number of robots available
-        self.numberRobots = list_ctr
 
         # subscriber to target gt data
         self.sub_target = rospy.Subscriber('/target/gtPose', PointStamped, self.target_pose_callback, queue_size=5)
@@ -95,7 +95,7 @@ class OmniCustom():
             msg.header.stamp = self.listener.getLatestCommonTime(GLOBAL_FRAME, msg.header.frame_id)
             new_pose = self.listener.transformPose(GLOBAL_FRAME, msg)
         except tf.Exception, err:
-            rospy.logwarn("TF Exception when transforming other robots: %s", err)
+            rospy.logdebug("TF Exception when transforming other robots - %s", err)
             return
 
         # insert new pose in the GT message
@@ -103,7 +103,10 @@ class OmniCustom():
 
         # if all robots have been found, publish the GT message
         if self.numberRobots == sum(found is True for found in self.gt.foundOMNI):
-            self.publisher_gt.publish(self.gt)
+            try:
+                self.publisher_gt.publish(self.gt)
+            except rospy.ROSException, err:
+                rospy.logdebug('ROSException - %s', err)
 
     def target_pose_callback(self, msg):
         # type: (PointStamped) -> None
@@ -116,7 +119,11 @@ class OmniCustom():
         self.gt.orangeBall3DGTposition.z = msg.point.z
 
         # publish this message
-        self.publisher_gt.publish(self.gt)
+
+        try:
+            self.publisher_gt.publish(self.gt)
+        except rospy.ROSException, err:
+            rospy.logdebug('ROSException - %s', err)
 
     def landmarks_callback(self, msg, list_id):
         # type: (MarkerArray) -> None
@@ -146,7 +153,7 @@ class OmniCustom():
         try:
             self.publishers_lm[list_id].publish(lm_msg)
         except rospy.ROSException, err:
-            rospy.logerr('ROSException - %s', err)
+            rospy.logdebug('ROSException - %s', err)
 
     def target_callback(self, msg, list_id):
         # type: (Marker) -> None
@@ -172,4 +179,4 @@ class OmniCustom():
         try:
             self.publishers_target[list_id].publish(ball_msg)
         except rospy.ROSException, err:
-            rospy.logerr('ROSException - %s', err)
+            rospy.logdebug('ROSException - %s', err)
