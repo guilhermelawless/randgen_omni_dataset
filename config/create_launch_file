@@ -77,7 +77,6 @@ if __name__ == '__main__':
             'y': random.uniform(args.down, args.up),
             'z': random.uniform(0.0, 3.0)}
 
-
     # use rospkg to find the directory of this package
     rospack = rospkg.RosPack()
     path = rospack.get_path('randgen_omni_dataset')
@@ -86,17 +85,24 @@ if __name__ == '__main__':
     # now write the launch file
     launch = ET.Element("launch")
 
+    # parameter PLAYING_ROBOTS
     ET.SubElement(launch, 'rosparam', param='PLAYING_ROBOTS').text = str([1]*args.N)
+
+    # include the world launch file
     ET.SubElement(launch, 'include', file='$(find randgen_omni_dataset)/launch/world.launch')
+
+    # ball node
     ball_el = ET.SubElement(launch, 'node', name='ball', pkg=PKG, type='ball')
     ET.SubElement(ball_el, 'rosparam', param='initial_pose').text = str(ball)
     ET.SubElement(ball_el, 'param', name='freq_pub', value='100')
 
     # for all robots
     for robot in robot_list:
+        # robot node
         node_robot = ET.SubElement(launch, 'node', name=robot.name, pkg=PKG, type='robot', output='screen')
         ET.SubElement(node_robot, 'rosparam', param='initial_pose').text = str(robot.get_dict())
 
+        # robot odometry node
         node_odometry = ET.SubElement(launch, 'node', name=robot.name+'_odometry', pkg=PKG, type='odometry', output='screen')
         ET.SubElement(node_odometry, 'param', name='topic', value='/'+robot.name+'/genOdometry')
 
