@@ -138,10 +138,7 @@ if __name__ == '__main__':
     ET.SubElement(launch, 'arg', name='rate', default='1.0')
 
     # the rosbag node
-    str_args = '--quiet --clock --rate=$(arg rate)'
-    for robot in robot_list:
-        str_args += ' $(arg path)/' + robot.name.upper() + '_simulated.bag'
-    str_args += ' $(arg path)/gt_simulated.bag'
+    str_args = '--quiet --clock --rate=$(arg rate) $(arg path)/omni_simulated.bag'
     ET.SubElement(launch, 'node', pkg='rosbag', type='play', name='player', output='screen', args=str_args)
 
     # the performer node
@@ -178,15 +175,17 @@ if __name__ == '__main__':
         str_pos_init += str(robot.x) + ', ' + str(robot.y) + ', ' + str(robot.theta) + ', '
     str_pos_init = str_pos_init[:len(str_pos_init)-2]  # remove last comma and whitespace
     str_pos_init += ']'
-    ET.SubElement(launch, 'param', name='POS_INIT', value=str_pos_init)
+    ET.SubElement(launch, 'rosparam', param='POS_INIT').text = str_pos_init
 
     # particle initial ranges
     str_particles = '['
     for robot in robot_list:
         for var in robot.x, robot.y, robot.theta:
             str_particles += str(var-0.05) + ',' + str(var+0.05) + ','
+    for var, value in ball.items():
+        str_particles += str(value-0.05) + ',' + str(value+0.05) + ','
     str_particles = str_particles[:len(str_particles)-1] + ']'  # last comma becomes ]
-    ET.SubElement(launch, 'param', name='CUSTOM_PARTICLE_INIT', value=str_particles)
+    ET.SubElement(launch, 'rosparam', param='CUSTOM_PARTICLE_INIT').text = str_particles
 
     # path to the new launch file in the pfuclt pkg folder
     path = rospack.get_path('pfuclt_omni_dataset')
