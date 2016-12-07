@@ -19,6 +19,7 @@ MAX_DIST_FROM_ROBOTS = 1.0
 MAX_ANGLE_FROM_ROBOTS = math.radians(25)
 MAX_DIST_FROM_WALLS = 0.2
 MAX_ANGLE_FROM_WALLS = pi/2.0
+RADIUS = 0.3
 
 
 def norm2(x, y):
@@ -395,7 +396,7 @@ class Robot(object):
             ang = normalize_angle(math.atan2(new_pose.pose.position.y, new_pose.pose.position.x))
 
             # if next to other robot and going to walk into it, return collision
-            if dist < MAX_DIST_FROM_ROBOTS and abs(ang) < MAX_ANGLE_FROM_ROBOTS:
+            if (dist < (2*RADIUS) and abs(ang) < pi/2.0) or (dist < MAX_DIST_FROM_ROBOTS and abs(ang) < MAX_ANGLE_FROM_ROBOTS):
                 # return collision
                 return True
 
