@@ -38,6 +38,7 @@ class OmniCustom():
         # iterate through the playing robots list, building our list of PoseWithCovariance msgs
         list_ctr = 0
         self.publishers_lm = []
+        self.publishers_target = []
         for idx, running in enumerate(playing_robots):
 
             # robot ID and name
@@ -53,6 +54,12 @@ class OmniCustom():
 
             # add subscriber to the landmark observations with argument to list id
             rospy.Subscriber(name + '/landmarkObs', MarkerArray, self.landmarks_callback, list_ctr)
+
+            # initiate the publisher for the target observation msg
+            self.publishers_target.append(rospy.Publisher(name + '/orangeball3Dposition', BallData, queue_size=10))
+
+            # add subscriber to the target observations with argument to list id
+            rospy.Subscriber(name + '/targetObs', Marker, self.target_callback, list_ctr)
 
             # add a new PoseWithCovariance object to our poseOMNI list in the GT message
             self.gt.poseOMNI.append(PoseWithCovariance())
@@ -136,4 +143,33 @@ class OmniCustom():
             lm_msg.found.append(True)
 
         # publish with updated information
-        self.publishers_lm[list_id].publish(lm_msg)
+        try:
+            self.publishers_lm[list_id].publish(lm_msg)
+        except rospy.ROSException, err:
+            rospy.logerr('ROSException - %s', err)
+
+    def target_callback(self, msg, list_id):
+        # type: (Marker) -> None
+
+        # create msg and insert information
+        ball_msg = BallData()
+        ball_msg.header.stamp = msg.header.stamp
+
+        # Our point of interest is the 2nd in the points list
+        point = msg.points[1]
+
+        # Add x and y
+        ball_msg.x = point.x
+        ball_msg.y = point.y
+        ball_msg.z = point.z
+
+        # Add found
+        ball_msg.found = True
+
+        # ignoring the mismatchfactor since it's not being used by the algorithm
+
+        # publish with updated information
+        try:
+            self.publishers_target[list_id].publish(ball_msg)
+        except rospy.ROSException, err:
+            rospy.logerr('ROSException - %s', err)
