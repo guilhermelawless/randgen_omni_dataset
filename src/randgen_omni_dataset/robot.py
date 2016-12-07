@@ -253,11 +253,17 @@ class Robot(object):
 
         # when walking forward if collision detected, start rotating
         elif not self.is_rotating and collision:
-            self.service_change_state('Rotate')
+            try:
+                self.service_change_state('Rotate')
+            except rospy.ServiceException:
+                rospy.logdebug('Error calling change_state service')
             self.is_rotating = True
 
     def stop_rotating(self, event):
-        self.service_change_state('WalkForward')
+        try:
+            self.service_change_state('WalkForward')
+        except rospy.ServiceException:
+            rospy.logdebug('Error calling change_state service')
         self.is_rotating = False
         self.rotating_timer_set = False
 
