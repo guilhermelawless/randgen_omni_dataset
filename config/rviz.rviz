@@ -6,7 +6,13 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /OMNI11/GTPose1
         - /OMNI11/targetObervations1/Namespaces1
+        - /OMNI61/GTPose1
+        - /OMNI71/GTPose1
+        - /OMNI81/GTPose1
+        - /OMNI91/GTPose1
+        - /OMNI101/GTPose1
       Splitter Ratio: 0.502778
     Tree Height: 776
   - Class: rviz/Selection
@@ -61,25 +67,9 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        OMNI1est:
+          Value: true
         omni1:
-          Value: true
-        omni10:
-          Value: true
-        omni2:
-          Value: true
-        omni3:
-          Value: true
-        omni4:
-          Value: true
-        omni5:
-          Value: true
-        omni6:
-          Value: true
-        omni7:
-          Value: true
-        omni8:
-          Value: true
-        omni9:
           Value: true
         world:
           Value: true
@@ -90,25 +80,9 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
+          OMNI1est:
+            {}
           omni1:
-            {}
-          omni10:
-            {}
-          omni2:
-            {}
-          omni3:
-            {}
-          omni4:
-            {}
-          omni5:
-            {}
-          omni6:
-            {}
-          omni7:
-            {}
-          omni8:
-            {}
-          omni9:
             {}
       Update Interval: 0
       Value: true
@@ -156,7 +130,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /omni1/gtPose
+          Topic: /omni1/simPose
           Unreliable: false
           Value: true
         - Class: rviz/MarkerArray
@@ -172,7 +146,7 @@ Visualization Manager:
           Marker Topic: /omni1/targetObs
           Name: targetObervations
           Namespaces:
-            /omni1/targetObs: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -191,7 +165,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /omni2/gtPose
+          Topic: /omni2/simPose
           Unreliable: false
           Value: true
         - Class: rviz/MarkerArray
@@ -199,7 +173,7 @@ Visualization Manager:
           Marker Topic: /omni2/landmarkObs
           Name: landmarkObservations
           Namespaces:
-            /omni2/landmarkObs: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -207,7 +181,7 @@ Visualization Manager:
           Marker Topic: /omni2/targetObs
           Name: targetObervations
           Namespaces:
-            /omni2/targetObs: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -226,7 +200,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /omni3/gtPose
+          Topic: /omni3/simPose
           Unreliable: false
           Value: true
         - Class: rviz/MarkerArray
@@ -234,7 +208,7 @@ Visualization Manager:
           Marker Topic: /omni3/landmarkObs
           Name: landmarkObservations
           Namespaces:
-            /omni3/landmarkObs: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -242,7 +216,7 @@ Visualization Manager:
           Marker Topic: /omni3/targetObs
           Name: targetObervations
           Namespaces:
-            /omni3/targetObs: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -261,7 +235,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /omni4/gtPose
+          Topic: /omni4/simPose
           Unreliable: false
           Value: true
         - Class: rviz/MarkerArray
@@ -269,7 +243,7 @@ Visualization Manager:
           Marker Topic: /omni4/landmarkObs
           Name: landmarkObservations
           Namespaces:
-            /omni4/landmarkObs: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -277,7 +251,7 @@ Visualization Manager:
           Marker Topic: /omni4/targetObs
           Name: targetObervations
           Namespaces:
-            /omni4/targetObs: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -296,7 +270,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /omni5/gtPose
+          Topic: /omni5/simPose
           Unreliable: false
           Value: true
         - Class: rviz/MarkerArray
@@ -304,7 +278,7 @@ Visualization Manager:
           Marker Topic: /omni5/landmarkObs
           Name: landmarkObservations
           Namespaces:
-            /omni5/landmarkObs: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -312,7 +286,7 @@ Visualization Manager:
           Marker Topic: /omni5/targetObs
           Name: targetObervations
           Namespaces:
-            /omni5/targetObs: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -331,7 +305,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /omni6/gtPose
+          Topic: /omni6/simPose
           Unreliable: false
           Value: true
         - Class: rviz/MarkerArray
@@ -339,7 +313,7 @@ Visualization Manager:
           Marker Topic: /omni6/landmarkObs
           Name: landmarkObservations
           Namespaces:
-            /omni6/landmarkObs: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -347,7 +321,7 @@ Visualization Manager:
           Marker Topic: /omni6/targetObs
           Name: targetObervations
           Namespaces:
-            /omni6/targetObs: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -366,7 +340,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /omni7/gtPose
+          Topic: /omni7/simPose
           Unreliable: false
           Value: true
         - Class: rviz/MarkerArray
@@ -374,7 +348,7 @@ Visualization Manager:
           Marker Topic: /omni7/landmarkObs
           Name: landmarkObservations
           Namespaces:
-            /omni7/landmarkObs: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -382,7 +356,7 @@ Visualization Manager:
           Marker Topic: /omni7/targetObs
           Name: targetObervations
           Namespaces:
-            /omni7/targetObs: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -401,7 +375,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /omni8/gtPose
+          Topic: /omni8/simPose
           Unreliable: false
           Value: true
         - Class: rviz/MarkerArray
@@ -409,7 +383,7 @@ Visualization Manager:
           Marker Topic: /omni8/landmarkObs
           Name: landmarkObservations
           Namespaces:
-            /omni8/landmarkObs: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -417,7 +391,7 @@ Visualization Manager:
           Marker Topic: /omni8/targetObs
           Name: targetObervations
           Namespaces:
-            /omni8/targetObs: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -436,7 +410,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /omni9/gtPose
+          Topic: /omni9/simPose
           Unreliable: false
           Value: true
         - Class: rviz/MarkerArray
@@ -444,7 +418,7 @@ Visualization Manager:
           Marker Topic: /omni9/landmarkObs
           Name: landmarkObservations
           Namespaces:
-            /omni9/landmarkObs: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -452,7 +426,7 @@ Visualization Manager:
           Marker Topic: /omni9/targetObs
           Name: targetObervations
           Namespaces:
-            /omni9/targetObs: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -471,7 +445,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /omni10/gtPose
+          Topic: /omni10/simPose
           Unreliable: false
           Value: true
         - Class: rviz/MarkerArray
@@ -479,7 +453,7 @@ Visualization Manager:
           Marker Topic: /omni10/landmarkObs
           Name: landmarkObservations
           Namespaces:
-            /omni10/landmarkObs: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -487,7 +461,7 @@ Visualization Manager:
           Marker Topic: /omni10/targetObs
           Name: targetObervations
           Namespaces:
-            /omni10/targetObs: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -516,16 +490,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 15.858
+      Distance: 16.9587
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 5.18164
-        Y: 0.0627475
-        Z: -0.220493
+        X: 3.72112
+        Y: -0.946727
+        Z: -0.221493
       Name: Current View
       Near Clip Distance: 0.01
       Pitch: 1.5698
@@ -549,5 +523,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1855
-  X: 65
-  Y: 349
+  X: 54
+  Y: 311
