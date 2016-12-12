@@ -60,7 +60,7 @@ class OmniCustom():
             rospy.Subscriber(name + '/simPose', PoseStamped, self.robot_pose_callback, list_ctr)
 
             # initiate the publisher for the landmarks observations msg
-            self.publishers_lm.append(rospy.Publisher(name + '/landmarksobservations', LRMLandmarksData, queue_size=10))
+            self.publishers_lm.append(rospy.Publisher(name + '/landmarkspositions', LRMLandmarksData, queue_size=10))
 
             # add subscriber to the landmark observations with argument to list id
             rospy.Subscriber(name + '/landmarkObs', MarkerArray, self.landmarks_callback, list_ctr)

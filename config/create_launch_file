@@ -131,7 +131,7 @@ if __name__ == '__main__':
     launch = ET.Element('launch')
 
     # general parameters to be modified
-    ET.SubElement(launch, 'param', name='use_sim_time', value='true')
+    ET.SubElement(launch, 'param', name='use_sim_time', value='false')
     ET.SubElement(launch, 'arg', name='path', default='/home/$(optenv USER gsl)/datasets/omni_sim')
     ET.SubElement(launch, 'arg', name='debug', default='false')
     ET.SubElement(launch, 'arg', name='publish', default='true')
@@ -184,7 +184,7 @@ if __name__ == '__main__':
     for robot in robot_list:
         for var in robot.x, robot.y, robot.theta:
             str_particles += str(var-0.05) + ',' + str(var+0.05) + ','
-    for var, value in ball.items():
+    for var, value in ball.x, ball.y, ball.z:
         str_particles += str(value-0.05) + ',' + str(value+0.05) + ','
     str_particles = str_particles[:len(str_particles)-1] + ']'  # last comma becomes ]
     ET.SubElement(launch, 'rosparam', param='CUSTOM_PARTICLE_INIT').text = str_particles
