@@ -147,12 +147,12 @@ class Robot(object):
         # subscribers
         self.sub_odometry = rospy.Subscriber(self.namespace + '/genOdometry', customOdometryMsg, callback=self.odometry_callback,
                                              queue_size=100)
-        self.sub_target = rospy.Subscriber('/target/gtPose', PointStamped, callback=self.target_callback,
+        self.sub_target = rospy.Subscriber('/target/simPose', PointStamped, callback=self.target_callback,
                                            queue_size=1)
 
         # publishers
         self.pub_odometry = rospy.Publisher(self.namespace + '/odometry', odometryMsg, queue_size=100)
-        self.pub_gt_rviz = rospy.Publisher(self.namespace + '/gtPose', PoseStamped, queue_size=10)
+        self.pub_gt_rviz = rospy.Publisher(self.namespace + '/simPose', PoseStamped, queue_size=10)
         self.pub_landmark_observations = rospy.Publisher(self.namespace + '/landmarkObs', MarkerArray, queue_size=5)
         self.pub_target_observation = rospy.Publisher(self.namespace + '/targetObs', Marker, queue_size=5)
 
@@ -174,7 +174,7 @@ class Robot(object):
 
             # add subscriber to its pose, with an additional argument concerning the list position
             other_name = 'omni'+idx_s
-            rospy.Subscriber(other_name + '/gtPose', PoseStamped, self.other_robots_callback, list_ctr)
+            rospy.Subscriber(other_name + '/simPose', PoseStamped, self.other_robots_callback, list_ctr)
             self.otherRobots.append((other_name, False))
             # wait for odometry service to be available before continue
             rospy.wait_for_service(other_name + '/genOdometry/change_state')

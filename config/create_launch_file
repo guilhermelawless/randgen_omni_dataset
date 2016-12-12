@@ -132,7 +132,7 @@ if __name__ == '__main__':
 
     # general parameters to be modified
     ET.SubElement(launch, 'param', name='use_sim_time', value='true')
-    ET.SubElement(launch, 'arg', name='path', default='/home/$(optenv USER gsl)/datasets/omni/four_msl_robots_dataset')
+    ET.SubElement(launch, 'arg', name='path', default='/home/$(optenv USER gsl)/datasets/omni_sim')
     ET.SubElement(launch, 'arg', name='debug', default='false')
     ET.SubElement(launch, 'arg', name='publish', default='true')
     ET.SubElement(launch, 'arg', name='rate', default='1.0')
@@ -154,8 +154,10 @@ if __name__ == '__main__':
         ET.SubElement(node_pfuclt, 'param', name=robot.name.upper() + '_alpha', value=str_alpha_values)
     ET.SubElement(node_pfuclt, 'remap', {'from': '/pfuclt_orangeBallState', 'to': '/estimatedOrangeBallState'})
     ET.SubElement(node_pfuclt, 'remap', {'from': '/pfuclt_omni_poses', 'to': '/estimated_omni_poses'})
+    ET.SubElement(node_pfuclt, 'remap', {'to': '/gtData', 'from': '/gtData_4robotExp'})
 
     # other parameters
+    ET.SubElement(launch, 'rosparam', param='PLAYING_ROBOTS').text = str([1] * args.N)
     ET.SubElement(launch, 'param', name='MAX_ROBOTS', value=str(args.N))
     ET.SubElement(launch, 'param', name='ROB_HT', value=str(HEIGHT))
     ET.SubElement(launch, 'param', name='MY_ID', value='1')

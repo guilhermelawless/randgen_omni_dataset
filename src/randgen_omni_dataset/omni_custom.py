@@ -57,7 +57,7 @@ class OmniCustom():
             self.gt.foundOMNI.append(False)
 
             # add subscriber to its pose, with an additional argument concerning the list position
-            rospy.Subscriber(name + '/gtPose', PoseStamped, self.robot_pose_callback, list_ctr)
+            rospy.Subscriber(name + '/simPose', PoseStamped, self.robot_pose_callback, list_ctr)
 
             # initiate the publisher for the landmarks observations msg
             self.publishers_lm.append(rospy.Publisher(name + '/landmarksobservations', LRMLandmarksData, queue_size=10))
@@ -78,7 +78,7 @@ class OmniCustom():
             list_ctr += 1
 
         # subscriber to target gt data
-        self.sub_target = rospy.Subscriber('/target/gtPose', PointStamped, self.target_pose_callback, queue_size=5)
+        self.sub_target = rospy.Subscriber('/target/simPose', PointStamped, self.target_pose_callback, queue_size=5)
 
     def robot_pose_callback(self, msg, list_id):
         # type: (PoseStamped, int) -> None
@@ -119,7 +119,6 @@ class OmniCustom():
         self.gt.orangeBall3DGTposition.z = msg.point.z
 
         # publish this message
-
         try:
             self.publisher_gt.publish(self.gt)
         except rospy.ROSException, err:
