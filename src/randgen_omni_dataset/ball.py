@@ -59,7 +59,7 @@ class Ball(object):
         self.timer_hover = None
 
         # publishers
-        self.pub_gt_rviz = rospy.Publisher('/target/gtPose', PointStamped, queue_size=1)
+        self.pub_gt_rviz = rospy.Publisher('/target/simPose', PointStamped, queue_size=1)
 
         # model rate
         self.rate_model = rospy.Rate(freq_model)
