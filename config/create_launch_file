@@ -192,7 +192,10 @@ if __name__ == '__main__':
     ET.SubElement(launch, 'rosparam', param='CUSTOM_PARTICLE_INIT').text = str_particles
 
     # path to the new launch file in the pfuclt pkg folder
-    path = rospack.get_path('pfuclt_omni_dataset')
+    try:
+        path = rospack.get_path('pfuclt_omni_dataset')
+    except rospkg.ResourceNotFound:
+        exit
     path += '/launch/' + args.file
 
     # pretty print the tree to the file in the path variable
