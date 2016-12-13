@@ -44,13 +44,14 @@
   <build_depend>message_generation</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>read_omni_dataset</build_depend>
-  <build_depend>tf</build_depend>
+  <build_depend>python-numpy</build_depend>
 
   <run_depend>rospy</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>message_runtime</run_depend>
   <run_depend>read_omni_dataset</run_depend>
   <run_depend>tf</run_depend>
+  <run_depend>python-numpy</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
