@@ -11,7 +11,6 @@ from randgen_omni_dataset.odometry import customOdometryMsg
 from visualization_msgs.msg import MarkerArray, Marker
 from randgen_omni_dataset.srv import *
 
-HEIGHT = 0.81
 BASE_FRAME = 'world'
 TWO_PI = 2.0 * pi
 LAST_TF_TIME = 0
@@ -19,7 +18,8 @@ MAX_DIST_FROM_ROBOTS = 1.0
 MAX_ANGLE_FROM_ROBOTS = math.radians(25)
 MAX_DIST_FROM_WALLS = 0.2
 MAX_ANGLE_FROM_WALLS = pi/2.0
-RADIUS = 0.3
+RADIUS_DEFAULT = 5.0
+HEIGHT_DEFAULT = 0.1
 
 
 def norm2(x, y):
@@ -67,7 +67,7 @@ def build_marker_arrow(head):
 class Robot(object):
     # The Robot class holds the various robot components, such as odometry, laser-based observations, etc
 
-    def __init__(self, init_pose, name='OMNI_DEFAULT', target_freq = 20, landmark_freq = 20):
+    def __init__(self, init_pose, name='OMNI_DEFAULT', target_freq=20, landmark_freq=20):
         # type: (dict, str, int, int) -> None
 
         # initial robot pose
@@ -84,6 +84,12 @@ class Robot(object):
         assert isinstance(target_freq, int)
         assert isinstance(landmark_freq, int)
 
+        # radius from parameter server, private for this node
+        self.radius = rospy.get_param('~radius', RADIUS_DEFAULT)
+
+        # height from parameter server, private for this node
+        self.height = rospy.get_param('~height', HEIGHT_DEFAULT)
+
         # timers for observation callbacks
         self.landmark_timer_period = 1.0/landmark_freq
         self.landmark_timer = None
@@ -91,7 +97,7 @@ class Robot(object):
         self.target_timer = None
 
         # robot name and namespace
-        self.name = name[1:] # remove /
+        self.name = name[1:]  # remove /
         self.namespace = name
 
         # frame
@@ -137,6 +143,21 @@ class Robot(object):
         self.msg_GT_rviz = PoseStamped()
         self.msg_GT_rviz.header.frame_id = self.frame
 
+        # pose marker
+        self.cylinder = Marker()
+        self.cylinder.header.frame_id = self.frame
+        self.cylinder.action = Marker.ADD
+        self.cylinder.type = Marker.CYLINDER
+        self.cylinder.scale.x = self.cylinder.scale.y = self.radius * 2.0
+        self.cylinder.scale.z = self.height
+        # x and y are 0 because local frame, z is negative because the local frame is defined at height
+        self.cylinder.pose.position.z = -self.height / 2.0
+        self.cylinder.color.a = 1.0
+        self.cylinder.color.r = 0.5
+        self.cylinder.color.g = 0.5
+        self.cylinder.color.b = 0.5
+        self.cylinder.ns = self.name
+
         # odometry service
         self.service_change_state = rospy.ServiceProxy(self.namespace + '/genOdometry/change_state', SendString)
         self.service_change_state.wait_for_service()
@@ -155,6 +176,7 @@ class Robot(object):
         self.pub_gt_rviz = rospy.Publisher(self.namespace + '/simPose', PoseStamped, queue_size=10)
         self.pub_landmark_observations = rospy.Publisher(self.namespace + '/landmarkObs', MarkerArray, queue_size=5)
         self.pub_target_observation = rospy.Publisher(self.namespace + '/targetObs', Marker, queue_size=5)
+        self.pub_cylinder = rospy.Publisher(self.namespace + '/poseMarker', Marker, queue_size=1)
 
         # tf broadcaster
         self.broadcaster = tf.TransformBroadcaster()
@@ -230,7 +252,7 @@ class Robot(object):
         self.add_odometry(msg)
 
         # print as debug
-        rospy.logdebug(self.pose_to_str())
+        # rospy.logdebug(self.pose_to_str())
 
         # publish current pose
         self.publish_rviz_gt()
@@ -312,7 +334,7 @@ class Robot(object):
 
         quaternion = tf.transformations.quaternion_about_axis(self.pose['theta'], [0, 0, 1])
 
-        self.broadcaster.sendTransform((self.pose['x'], self.pose['y'], HEIGHT),
+        self.broadcaster.sendTransform((self.pose['x'], self.pose['y'], self.height),
                                        quaternion,
                                        stamp,
                                        self.frame,
@@ -326,6 +348,11 @@ class Robot(object):
         except rospy.ROSException, err:
             rospy.logdebug('ROSException - %s', err)
 
+        # besides the pose, let's publish a cylinder marker with the robot radius and its height
+        self.cylinder.header.stamp = stamp
+        self.pub_cylinder.publish(self.cylinder)
+
+
     def generate_landmark_observations(self, event):
         marker_id = 0
         stamp = rospy.Time() # last available tf
@@ -338,7 +365,7 @@ class Robot(object):
         for lm in self.lm_list:
             lm_point.point.x = lm[0]
             lm_point.point.y = lm[1]
-            lm_point.point.z = HEIGHT
+            lm_point.point.z = self.height
 
             # Calc. the observation in the local frame
             try:
@@ -414,7 +441,7 @@ class Robot(object):
             ang = normalize_angle(math.atan2(new_pose.pose.position.y, new_pose.pose.position.x))
 
             # if next to other robot and going to walk into it, return collision
-            if (dist < (2*RADIUS) and abs(ang) < pi/2.0) or (dist < MAX_DIST_FROM_ROBOTS and abs(ang) < MAX_ANGLE_FROM_ROBOTS):
+            if (dist < (2*self.radius) and abs(ang) < pi/2.0) or (dist < MAX_DIST_FROM_ROBOTS and abs(ang) < MAX_ANGLE_FROM_ROBOTS):
                 # return collision
                 return True
 

@@ -6,9 +6,11 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /Target1
-        - /OMNI11/GTPose1
         - /OMNI11/targetObervations1/Namespaces1
+        - /OMNI41
+        - /OMNI41/Cylinder1
+        - /OMNI51
+        - /OMNI51/Cylinder1
         - /OMNI61/GTPose1
         - /OMNI71/GTPose1
         - /OMNI81/GTPose1
@@ -58,21 +60,29 @@ Visualization Manager:
       Value: true
     - Class: rviz/Axes
       Enabled: true
-      Length: 5
+      Length: 3
       Name: Axes
       Radius: 0.1
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/TF
       Enabled: true
-      Frame Timeout: 15
+      Frame Timeout: 5
       Frames:
         All Enabled: true
         omni1:
           Value: true
+        omni2:
+          Value: true
+        omni3:
+          Value: true
+        omni4:
+          Value: true
+        omni5:
+          Value: true
         world:
           Value: true
-      Marker Scale: 1
+      Marker Scale: 2
       Name: TF
       Show Arrows: true
       Show Axes: true
@@ -80,6 +90,14 @@ Visualization Manager:
       Tree:
         world:
           omni1:
+            {}
+          omni2:
+            {}
+          omni3:
+            {}
+          omni4:
+            {}
+          omni5:
             {}
       Update Interval: 0
       Value: true
@@ -146,6 +164,14 @@ Visualization Manager:
             /omni1/targetObs: true
           Queue Size: 100
           Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /omni1/poseMarker
+          Name: Cylinder
+          Namespaces:
+            omni1: true
+          Queue Size: 100
+          Value: true
       Enabled: true
       Name: OMNI1
     - Class: rviz/Group
@@ -170,7 +196,7 @@ Visualization Manager:
           Marker Topic: /omni2/landmarkObs
           Name: landmarkObservations
           Namespaces:
-            {}
+            /omni2/landmarkObs: true
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -178,7 +204,16 @@ Visualization Manager:
           Marker Topic: /omni2/targetObs
           Name: targetObervations
           Namespaces:
-            {}
+            /omni2/targetObs: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /omni2/poseMarker
+          Name: Cylinder
+          Namespaces:
+            omni1: true
+            omni2: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -205,7 +240,7 @@ Visualization Manager:
           Marker Topic: /omni3/landmarkObs
           Name: landmarkObservations
           Namespaces:
-            {}
+            /omni3/landmarkObs: true
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -213,7 +248,16 @@ Visualization Manager:
           Marker Topic: /omni3/targetObs
           Name: targetObervations
           Namespaces:
-            {}
+            /omni3/targetObs: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /omni3/poseMarker
+          Name: Cylinder
+          Namespaces:
+            omni1: true
+            omni3: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -240,7 +284,7 @@ Visualization Manager:
           Marker Topic: /omni4/landmarkObs
           Name: landmarkObservations
           Namespaces:
-            {}
+            /omni4/landmarkObs: true
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -248,7 +292,16 @@ Visualization Manager:
           Marker Topic: /omni4/targetObs
           Name: targetObervations
           Namespaces:
-            {}
+            /omni4/targetObs: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /omni4/poseMarker
+          Name: Cylinder
+          Namespaces:
+            omni1: true
+            omni4: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -275,7 +328,7 @@ Visualization Manager:
           Marker Topic: /omni5/landmarkObs
           Name: landmarkObservations
           Namespaces:
-            {}
+            /omni5/landmarkObs: true
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -283,7 +336,16 @@ Visualization Manager:
           Marker Topic: /omni5/targetObs
           Name: targetObervations
           Namespaces:
-            {}
+            /omni5/targetObs: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /omni5/poseMarker
+          Name: Cylinder
+          Namespaces:
+            omni1: true
+            omni5: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -321,6 +383,14 @@ Visualization Manager:
             {}
           Queue Size: 100
           Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /omni6/poseMarker
+          Name: Cylinder
+          Namespaces:
+            omni1: true
+          Queue Size: 100
+          Value: true
       Enabled: true
       Name: OMNI6
     - Class: rviz/Group
@@ -354,6 +424,14 @@ Visualization Manager:
           Name: targetObervations
           Namespaces:
             {}
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /omni7/poseMarker
+          Name: Cylinder
+          Namespaces:
+            omni1: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -391,6 +469,14 @@ Visualization Manager:
             {}
           Queue Size: 100
           Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /omni8/poseMarker
+          Name: Cylinder
+          Namespaces:
+            omni1: true
+          Queue Size: 100
+          Value: true
       Enabled: true
       Name: OMNI8
     - Class: rviz/Group
@@ -424,6 +510,14 @@ Visualization Manager:
           Name: targetObervations
           Namespaces:
             {}
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /omni9/poseMarker
+          Name: Cylinder
+          Namespaces:
+            omni1: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -461,6 +555,14 @@ Visualization Manager:
             {}
           Queue Size: 100
           Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /omni10/poseMarker
+          Name: Cylinder
+          Namespaces:
+            omni1: true
+          Queue Size: 100
+          Value: true
       Enabled: true
       Name: OMNI10
   Enabled: true
@@ -487,22 +589,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 16.9587
+      Distance: 11.1289
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.72112
-        Y: -0.946727
-        Z: -0.221493
+        X: 4.97179
+        Y: -0.117979
+        Z: -0.0127928
       Name: Current View
       Near Clip Distance: 0.01
       Pitch: 1.5698
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.71856
+      Yaw: 4.71356
     Saved: ~
 Window Geometry:
   Displays:
