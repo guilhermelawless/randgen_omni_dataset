@@ -146,7 +146,7 @@ class OmniCustom():
             lm_msg.AreaLandMarkActualinPixels.append(max(0, min(dist + (random.random()*2 - 1), MAX_DIST)))
 
             # Add found
-            lm_msg.found.append(True)
+            lm_msg.found.append(marker.text == 'Seen')
 
         # publish with updated information
         try:

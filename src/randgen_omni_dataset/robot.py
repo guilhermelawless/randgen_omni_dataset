@@ -65,7 +65,7 @@ def build_marker_arrow(head):
     return marker
 
 
-def check_occlusions(sensor, target, radius, object):
+def check_occlusions(sensor, target, radius, obj):
     # type: (list, list, float, list) -> bool
 
     # This function checks if parameter object is being occluded by the target, when seen from sensor
@@ -77,11 +77,11 @@ def check_occlusions(sensor, target, radius, object):
     #           if this distance is lower than radius, then there is occlusion
 
     # Lists should be x, y
-    assert(len(sensor) == len(target) == len(object) == 2)
+    assert(len(sensor) == len(target) == len(obj) == 2)
 
     # Define vectors from sensor to target and from sensor to object
     arr_target = np.array([target[0] - sensor[0], target[1] - sensor[1]])
-    arr_object = np.array([object[0] - sensor[0], object[1] - sensor[1]])
+    arr_object = np.array([obj[0] - sensor[0], obj[1] - sensor[1]])
 
     # Special case if target is closer than the object + radius, no occlusion
     if np.linalg.norm(arr_target) + radius < np.linalg.norm(arr_object):
@@ -215,8 +215,8 @@ class Robot(object):
         self.rotating_timer_set = False
 
         # subscribers
-        self.sub_odometry = rospy.Subscriber(self.namespace + '/genOdometry', customOdometryMsg, callback=self.odometry_callback,
-                                             queue_size=100)
+        self.sub_odometry = rospy.Subscriber(self.namespace + '/genOdometry', customOdometryMsg,
+                                             callback=self.odometry_callback, queue_size=100)
         self.sub_target = rospy.Subscriber('/target/simPose', PointStamped, callback=self.target_callback,
                                            queue_size=1)
 
@@ -246,7 +246,7 @@ class Robot(object):
             # add subscriber to its pose, with an additional argument concerning the list position
             other_name = 'omni'+idx_s
             rospy.Subscriber(other_name + '/simPose', PoseStamped, self.other_robots_callback, list_ctr)
-            self.otherRobots.append((other_name, False))
+            self.otherRobots.append((idx-1, other_name, False, False))
             # wait for odometry service to be available before continue
             rospy.wait_for_service(other_name + '/genOdometry/change_state')
             list_ctr += 1
@@ -274,7 +274,8 @@ class Robot(object):
             self.landmark_timer.shutdown()
             self.target_timer.shutdown()
 
-    def loop(self):
+    @staticmethod
+    def loop():
         # All through callbacks
         try:
             rospy.spin()
@@ -407,7 +408,7 @@ class Robot(object):
 
     def generate_landmark_observations(self, event):
         marker_id = 0
-        stamp = rospy.Time() # last available tf
+        stamp = rospy.Time()  # last available tf
         markers = MarkerArray()
         lm_point = PointStamped()
         lm_point.header.frame_id = BASE_FRAME
@@ -421,7 +422,7 @@ class Robot(object):
 
             # Calc. the observation in the local frame
             try:
-                lm_point_local = tf.TransformerROS.transformPoint(self.listener, self.frame, lm_point)
+                lm_point_local = self.listener.transformPoint(self.frame, lm_point)
             except tf.Exception, err:
                 rospy.logwarn('TF Error - %s', err)
                 return
@@ -435,6 +436,20 @@ class Robot(object):
 
             markers.markers.append(marker)
             marker_id += 1
+
+            # check occlusions
+            for idx, name, pose_global, pose_local in self.otherRobots:
+                if pose_local is False:
+                    continue
+
+                if check_occlusions([0, 0],
+                                    [lm_point_local.point.x, lm_point_local.point.y],
+                                    self.radius,  # assume same radius for all robots
+                                    [pose_local.pose.position.x, pose_local.pose.position.y]):
+                    marker.color.r = 1.0
+                    marker.text = 'NotSeen'
+                else:
+                    marker.text = 'Seen'
 
         try:
             self.pub_landmark_observations.publish(markers)
@@ -466,23 +481,14 @@ class Robot(object):
         marker.color.g = 1.0
 
         # check occlusions
-        for name, pose in self.otherRobots:
-            if pose is False:
-                continue
-
-            # get other robot pose to local frame
-            try:
-                # find latest time for transformation
-                pose.header.stamp = self.listener.getLatestCommonTime(self.frame, pose.header.frame_id)
-                new_pose = self.listener.transformPose(self.frame, pose)
-            except tf.Exception, err:
-                rospy.logdebug("TF Exception when transforming other robots - %s", err)
+        for idx, name, pose_global, pose_local in self.otherRobots:
+            if pose_local is False:
                 continue
 
             if check_occlusions([0, 0],
                                 [target_local.point.x, target_local.point.y],
                                 self.radius,  # assume same radius for all robots
-                                [new_pose.pose.position.x, new_pose.pose.position.y]):
+                                [pose_local.pose.position.x, pose_local.pose.position.y]):
                 marker.color.g = 0.0
                 marker.color.r = 1.0
                 marker.text = 'NotSeen'
@@ -495,29 +501,31 @@ class Robot(object):
             rospy.logdebug('ROSException - %s', err)
 
     def other_robots_callback(self, msg, list_id):
-        # Replace tuple with a new tuple with the same name and a new PoseStamped
-        self.otherRobots[list_id] = (self.otherRobots[list_id][0], msg)
+        # Obtain the pose in the local frame
+        try:
+            # find latest time for transformation
+            msg.header.stamp = self.listener.getLatestCommonTime(self.frame, msg.header.frame_id)
+            new_pose = self.listener.transformPose(self.frame, msg)
+        except tf.Exception, err:
+            rospy.logdebug("TF Exception when transforming other robots - %s", err)
+            return
+
+        # Replace tuple with a new tuple with the same id and name, new poses in global and local frame
+        self.otherRobots[list_id] = (self.otherRobots[list_id][0], self.otherRobots[list_id][1], msg, new_pose)
 
     def check_collisions_other_robots(self):
-        # type: () -> boolean
-        for robot, msg in self.otherRobots:
+        # type: () -> bool
+        for idx, name, pose_global, pose_local in self.otherRobots:
             # check if any message has been received
-            if msg is False:
+            if pose_local is False:
                 continue
 
-            try:
-                # find latest time for transformation
-                msg.header.stamp = self.listener.getLatestCommonTime(self.frame, msg.header.frame_id)
-                new_pose = self.listener.transformPose(self.frame, msg)
-            except tf.Exception, err:
-                rospy.logdebug("TF Exception when transforming other robots - %s", err)
-                continue
-
-            dist = norm2(new_pose.pose.position.x, new_pose.pose.position.y)
-            ang = normalize_angle(math.atan2(new_pose.pose.position.y, new_pose.pose.position.x))
+            dist = norm2(pose_local.pose.position.x, pose_local.pose.position.y)
+            ang = normalize_angle(math.atan2(pose_local.pose.position.y, pose_local.pose.position.x))
 
             # if next to other robot and going to walk into it, return collision
-            if (dist < (2*self.radius) and abs(ang) < pi/2.0) or (dist < MAX_DIST_FROM_ROBOTS and abs(ang) < MAX_ANGLE_FROM_ROBOTS):
+            if (dist < (2*self.radius) and abs(ang) < pi/2.0) or \
+                    (dist < MAX_DIST_FROM_ROBOTS and abs(ang) < MAX_ANGLE_FROM_ROBOTS):
                 # return collision
                 return True
 
@@ -528,10 +536,10 @@ class Robot(object):
         # type () -> boolean
 
         for location, variable, reference_angle in self.walls:
-            if abs(self.pose[variable] - location) < MAX_DIST_FROM_WALLS and abs(normalize_angle(self.pose['theta'] - reference_angle)) < MAX_ANGLE_FROM_WALLS:
+            if abs(self.pose[variable] - location) < MAX_DIST_FROM_WALLS and \
+                    abs(normalize_angle(self.pose['theta'] - reference_angle)) < MAX_ANGLE_FROM_WALLS:
                 # Future collision detected
                 return True
 
         # No collision
         return False
-
