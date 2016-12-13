@@ -1,6 +1,7 @@
 import rospy
 import math
 import random
+import numpy as np
 from math import pi, fmod
 import tf
 import tf.transformations
@@ -62,6 +63,54 @@ def build_marker_arrow(head):
     marker.points.append(head)
 
     return marker
+
+
+def check_occlusions(sensor, target, radius, object):
+    # type: (list, list, float, list) -> bool
+
+    # This function checks if parameter object is being occluded by the target, when seen from sensor
+    # Return is true if object is occluded and false otherwise
+
+    # Note that the checking is done only in the 2D xy plane
+
+    # Approach: obtain the minimum distance from object to the line defined by sensor and target
+    #           if this distance is lower than radius, then there is occlusion
+
+    # Lists should be x, y
+    assert(len(sensor) == len(target) == len(object) == 2)
+
+    # Define vectors from sensor to target and from sensor to object
+    arr_target = np.array([target[0] - sensor[0], target[1] - sensor[1]])
+    arr_object = np.array([object[0] - sensor[0], object[1] - sensor[1]])
+
+    # Special case if target is closer than the object + radius, no occlusion
+    if np.linalg.norm(arr_target) + radius < np.linalg.norm(arr_object):
+        return False
+
+    # Auxiliary unit vector
+    unit_target = arr_target / np.linalg.norm(arr_target)
+
+    # Scalar projection of b on a
+    inner = np.inner(arr_object, unit_target)
+
+    # If inner is negative, we're certain there's no occlusion because the target and object are in different directions
+    if inner < 0:
+        return False
+
+    # Vector defining the projection
+    projection = inner * unit_target
+
+    # Our vector of instance is from the object to the closest point in projection, which is the tail of proj
+    d = arr_object - projection
+
+    # The distance is given by the norm of this vector
+    dist = np.linalg.norm(d)
+
+    # If dist > radius there is no occlusion
+    if dist > radius:
+        return False
+    else:
+        return True
 
 
 class Robot(object):
@@ -350,8 +399,11 @@ class Robot(object):
 
         # besides the pose, let's publish a cylinder marker with the robot radius and its height
         self.cylinder.header.stamp = stamp
-        self.pub_cylinder.publish(self.cylinder)
 
+        try:
+            self.pub_cylinder.publish(self.cylinder)
+        except rospy.ROSException, err:
+            rospy.logdebug('ROSException - %s', err)
 
     def generate_landmark_observations(self, event):
         marker_id = 0
@@ -400,18 +452,42 @@ class Robot(object):
 
         # Calc. the observation in the local frame
         try:
-            target_local = tf.TransformerROS.transformPoint(self.listener, self.frame, self.target_pose)
+            target_local = self.listener.transformPoint(self.frame, self.target_pose)
         except tf.Exception, err:
             rospy.logdebug('TF Error - %s', err)
             return
 
-        # create a marker arrow to connect robot and landmark
+        # create a marker arrow to connect robot and target
         marker = build_marker_arrow(target_local.point)
         marker.header.frame_id = self.frame
         marker.header.stamp = rospy.Time.now()
         marker.ns = self.namespace + '/targetObs'
         marker.id = marker_id
         marker.color.g = 1.0
+
+        # check occlusions
+        for name, pose in self.otherRobots:
+            if pose is False:
+                continue
+
+            # get other robot pose to local frame
+            try:
+                # find latest time for transformation
+                pose.header.stamp = self.listener.getLatestCommonTime(self.frame, pose.header.frame_id)
+                new_pose = self.listener.transformPose(self.frame, pose)
+            except tf.Exception, err:
+                rospy.logdebug("TF Exception when transforming other robots - %s", err)
+                continue
+
+            if check_occlusions([0, 0],
+                                [target_local.point.x, target_local.point.y],
+                                self.radius,  # assume same radius for all robots
+                                [new_pose.pose.position.x, new_pose.pose.position.y]):
+                marker.color.g = 0.0
+                marker.color.r = 1.0
+                marker.text = 'NotSeen'
+            else:
+                marker.text = 'Seen'
 
         try:
             self.pub_target_observation.publish(marker)

@@ -22,7 +22,7 @@ class Ball(object):
     #   - Impulse when ball hits the ground
     #   - Impulse by lifting the ball
 
-    def __init__(self, init_pose=None, freq_model=100, freq_pub=10, radius=0.1):
+    def __init__(self, init_pose=None, freq_model=100, freq_pub=10, radius=0.3):
 
         # initiate seed
         random.seed = None
@@ -83,7 +83,10 @@ class Ball(object):
         self.msg_GT_rviz.point.y = self.pose['y']
         self.msg_GT_rviz.point.z = self.pose['z']
 
-        self.pub_gt_rviz.publish(self.msg_GT_rviz)
+        try:
+            self.pub_gt_rviz.publish(self.msg_GT_rviz)
+        except rospy.ROSException, err:
+            rospy.logdebug('ROSException - %s', err)
 
     def run(self, flag):
         # check if flag is different from current

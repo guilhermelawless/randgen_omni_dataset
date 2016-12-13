@@ -169,8 +169,8 @@ class OmniCustom():
         ball_msg.y = point.y
         ball_msg.z = point.z
 
-        # Add found
-        ball_msg.found = True
+        # Add found - this is my way of coding if the ball is seen in the Marker message
+        ball_msg.found = (msg.text == 'Seen')
 
         # ignoring the mismatchfactor since it's not being used by the algorithm
 
