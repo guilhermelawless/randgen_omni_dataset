@@ -137,7 +137,7 @@ if __name__ == '__main__':
     launch = ET.Element('launch')
 
     # general parameters to be modified
-    ET.SubElement(launch, 'param', name='use_sim_time', value='false')
+    ET.SubElement(launch, 'param', name='use_sim_time', value='true')
     ET.SubElement(launch, 'arg', name='path', default='/home/$(optenv USER gsl)/datasets/omni_sim')
     ET.SubElement(launch, 'arg', name='debug', default='false')
     ET.SubElement(launch, 'arg', name='publish', default='true')
@@ -205,3 +205,4 @@ if __name__ == '__main__':
     # pretty print the tree to the file in the path variable
     with open(path, 'w+') as f:
         f.write(prettify(launch))
+
