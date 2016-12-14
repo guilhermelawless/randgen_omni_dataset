@@ -42,6 +42,7 @@ class OmniCustom():
         list_ctr = 0
         self.publishers_lm = []
         self.publishers_target = []
+        self.heights = []
         for idx, running in enumerate(playing_robots):
 
             # robot ID and name
@@ -55,6 +56,12 @@ class OmniCustom():
             # add a new bool to our foundOMNI list in the GT message
             # will be True when first message comes
             self.gt.foundOMNI.append(False)
+
+            # robot height
+            if rospy.has_param(name + '/height'):
+                self.heights.append(rospy.get_param(name + '/height'))
+            else:
+                rospy.logfatal(name + ' height not set')
 
             # add subscriber to its pose, with an additional argument concerning the list position
             rospy.Subscriber(name + '/simPose', PoseStamped, self.robot_pose_callback, list_ctr)
@@ -167,7 +174,7 @@ class OmniCustom():
         # Add x and y
         ball_msg.x = point.x
         ball_msg.y = point.y
-        ball_msg.z = point.z
+        ball_msg.z = point.z + self.heights[list_id]
 
         # Add found - this is my way of coding if the ball is seen in the Marker message
         ball_msg.found = (msg.text == 'Seen')
