@@ -152,9 +152,10 @@ class Robot(object):
         # frame
         self.frame = self.name
 
-        # parameters: landmarks, walls, playing robots
+        # parameters: landmarks, walls, playing robots, alphas
         try:
             self.lm_list = rospy.get_param('/landmarks')
+            self.alphas = rospy.get_param('~alphas')
             walls = rospy.get_param('/walls')
             playing_robots = rospy.get_param('PLAYING_ROBOTS')
         except rospy.ROSException, err:
@@ -342,11 +343,22 @@ class Robot(object):
     def convert_odometry(self, msg):
         # type: (customOdometryMsg) -> odometryMsg
 
+        # first we want to add noise according to the alpha motion model
+        alphas = self.alphas
+        r1abs = abs(msg.rot1)
+        r2abs = abs(msg.rot2)
+        t = msg.translation
+
+        # Add noise according to the odometry motion model
+        rot1_hat = msg.rot1 + random.gauss(0, alphas[0]*r1abs + alphas[1]*t)
+        trans_hat = msg.translation + random.gauss(0, alphas[2]*t + alphas[3]*(r1abs + r2abs))
+        rot2_hat = msg.rot2 + random.gauss(0, alphas[0]*r2abs + alphas[1]*t)
+
         # convert from {translation, rot1, rot2} to our state-space variables {x, y, theta} using previous values
         self.msg_odometry.header.stamp = msg.header.stamp
-        self.msg_odometry.pose.pose.position.x = msg.translation * math.cos(msg.rot1)
-        self.msg_odometry.pose.pose.position.y = msg.translation * math.sin(msg.rot2)
-        delta_theta = msg.rot1 + msg.rot2
+        self.msg_odometry.pose.pose.position.x = trans_hat * math.cos(rot1_hat)
+        self.msg_odometry.pose.pose.position.y = trans_hat * math.sin(rot2_hat)
+        delta_theta = rot1_hat + rot2_hat
         quaternion = tf.transformations.quaternion_about_axis(delta_theta, [0, 0, 1])
         self.msg_odometry.pose.pose.orientation.x = quaternion[0]
         self.msg_odometry.pose.pose.orientation.y = quaternion[1]

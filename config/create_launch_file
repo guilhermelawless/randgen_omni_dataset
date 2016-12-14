@@ -63,6 +63,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--down', type=float, default=-5.0, help='Down limit to place robots')
     args = parser.parse_args()
 
+    str_alpha_values = '0.015, 0.1, 0.5, 0.001'
+
     # create robots
     robot_list = []
     for n in range(1, args.N+1):
@@ -116,6 +118,7 @@ if __name__ == '__main__':
         ET.SubElement(node_robot, 'rosparam', param='initial_pose').text = str(robot.get_dict())
         ET.SubElement(node_robot, 'param', name='radius', value=str(args.radius))
         ET.SubElement(node_robot, 'param', name='height', value=str(args.height))
+        ET.SubElement(node_robot, 'rosparam', param='alphas').text = '[' + str_alpha_values + ']'
 
         # robot odometry node
         node_odometry = ET.SubElement(launch, 'node', name=robot.name+'_odometry', pkg=PKG, type='odometry', output='screen')
@@ -145,7 +148,6 @@ if __name__ == '__main__':
     ET.SubElement(launch, 'node', pkg='rosbag', type='play', name='player', output='screen', args=str_args)
 
     # the performer node
-    str_alpha_values = '0.015, 0.1, 0.5, 0.001'
     node_pfuclt = ET.SubElement(launch, 'node', name='performer',
                                 pkg='pfuclt_omni_dataset', type='pfuclt_omni_dataset', output='screen',
                                 args='--debug $(arg debug) --publish $(arg publish)')
