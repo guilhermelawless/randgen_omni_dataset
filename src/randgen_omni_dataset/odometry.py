@@ -4,19 +4,19 @@ import std_msgs.msg
 from randgen_omni_dataset.msg import CustomOdometry as customOdometryMsg
 from randgen_omni_dataset.srv import SendString, SendStringResponse
 
-MEAN_T_WF = 0.007
-STD_T_WF = 0.1*MEAN_T_WF
+LEFT_T_WF = 0.010
+RIGHT_T_WF = 0.015
 MEAN_R1_WF = 0.000
-STD_R1_WF = 0.0001
+STD_R1_WF = 0.001
 MEAN_R2_WF = 0.000
-STD_R2_WF = 0.0001
+STD_R2_WF = 0.001
 
 MEAN_T_R = 0
 STD_T_R = 0.0001
-MEAN_R1_R = 0.005
-STD_R1_R = 0.1*MEAN_R1_R
-MEAN_R2_R = 0.005
-STD_R2_R = 0.1*MEAN_R2_R
+LEFT_R1_R = 0.0035
+RIGHT_R1_R = 0.0085
+LEFT_R2_R = 0.0030
+RIGHT_R2_R = 0.0090
 
 
 class AbstractOdometryStateVar(object):
@@ -46,6 +46,20 @@ class GaussianOdometryStateVar(AbstractOdometryStateVar):
     # Implement the abstract class with gaussian rng
     def rng(self):
         return random.gauss(self.mu, self.sigma)
+
+
+class UniformOdometryStateVar(AbstractOdometryStateVar):
+    def __init__(self, var_type, name, left_value, right_value):
+        # Call the base class init
+        AbstractOdometryStateVar.__init__(self, var_type, name)
+
+        # Save properties of left and right values
+        self.left = left_value
+        self.right = right_value
+
+    # Implement the abstract class with uniform rng
+    def rng(self):
+        return random.uniform(self.left, self.right)
 
 
 class Odometry(object):
@@ -79,13 +93,13 @@ class Odometry(object):
         random.seed(seed)
 
         # each variable is a list corresponding to the state
-        self.walkForward = [GaussianOdometryStateVar('t',   't_WalkForward',    MEAN_T_WF,  STD_T_WF),
+        self.walkForward = [UniformOdometryStateVar('t',    't_WalkForward',    LEFT_T_WF,  RIGHT_T_WF),
                             GaussianOdometryStateVar('r1',  'r1_WalkForward',   MEAN_R1_WF, STD_R2_WF),
                             GaussianOdometryStateVar('r2',  'r2_WalkForward',   MEAN_R2_WF, STD_R2_WF)]
 
         self.rotate = [ GaussianOdometryStateVar('t',   't_Rotate',     MEAN_T_R,   STD_T_R),
-                        GaussianOdometryStateVar('r1',  'r1_Rotate',    MEAN_R1_R,  STD_R1_R),
-                        GaussianOdometryStateVar('r2',  'r2_Rotate',    MEAN_R2_R,  STD_R2_R)]
+                        UniformOdometryStateVar('r1',   'r1_Rotate',    LEFT_R1_R,  RIGHT_R1_R),
+                        UniformOdometryStateVar('r2',   'r2_Rotate',    LEFT_R2_R,  RIGHT_R2_R)]
 
         # get a list with all variables
         self.var_list = []
@@ -171,7 +185,7 @@ class Odometry(object):
         return values
 
     def build_msg(self, msg=None, values=None, stamp=None):
-        # type: (odometryMsgType, dict, rospy.Time) -> odometryMsgType
+        # type: (customOdometryMsg, dict, rospy.Time) -> customOdometryMsg
         if values is None:
             values = self.values
 
@@ -227,4 +241,3 @@ class Odometry(object):
         # type: (bool) -> None
         self.is_running = flag
         rospy.logdebug('Odometry %s' % 'started' if flag is True else 'stopped')
-
