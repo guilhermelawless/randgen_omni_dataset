@@ -4,6 +4,7 @@ import argparse
 import math
 import random
 import rospkg
+import sys
 import xml.etree.cElementTree as ET
 from xml.etree import ElementTree
 from xml.dom import minidom
@@ -104,7 +105,7 @@ if __name__ == '__main__':
     ET.SubElement(launch, 'include', file='$(find randgen_omni_dataset)/launch/world.launch')
 
     # ball node
-    ball_el = ET.SubElement(launch, 'node', name='ball', pkg=PKG, type='ball')
+    ball_el = ET.SubElement(launch, 'node', name='ball', pkg=PKG, type='ball', output='screen')
     ET.SubElement(ball_el, 'rosparam', param='initial_pose').text = str(ball)
     ET.SubElement(ball_el, 'param', name='freq_pub', value='100')
 
@@ -195,7 +196,8 @@ if __name__ == '__main__':
     try:
         path = rospack.get_path('pfuclt_omni_dataset')
     except rospkg.ResourceNotFound:
-        exit
+        print 'Didnt find pfuclt package'
+        sys.exit(0)
     path += '/launch/' + args.file
 
     # pretty print the tree to the file in the path variable
