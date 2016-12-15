@@ -70,22 +70,26 @@ if __name__ == '__main__':
     parser.add_argument('N', type=int, help='Number of robots desired')
     parser.add_argument('-R', '--radius', type=float, default=0.5, help='Robot radius to be considered')
     parser.add_argument('-H', '--height', type=float, default=0.81, help='Robot height (where the sensor is)')
+    parser.add_argument('-t', '--threshold', type=float, default=3.5, help='Distance threshold for landmark and target observations')
     parser.add_argument('-f', '--file', type=str, default='new.launch', help='Desired filename to be placed in launch directory')
     parser.add_argument('-l', '--left', type=float, default=-0.0, help='xmin - Left limit to place robots')
     parser.add_argument('-r', '--right', type=float, default=7.0, help='xmax - Right limit to place robots')
     parser.add_argument('-u', '--up', type=float, default=5.0, help='ymax - Up limit to place robots')
     parser.add_argument('-d', '--down', type=float, default=-5.0, help='ymin - Down limit to place robots')
+    parser.add_argument('-ag', '--alpha_gen', type=str, default='0.015, 0.1, 0.5, 0.001', help='Alpha values for generating odometry')
+    parser.add_argument('-aa', '--alpha_alg', type=str, default='0.015, 0.1, 0.5, 0.001', help='Alpha values for the PF-UCLT algorithm')
+    parser.add_argument('-L', '--landmarks_param', type=str, default='/landmarks', help='Parameter with landmarks positions')
+    parser.add_argument('-rl', '--landmark_obs_rate', type=float, default=20, help='Landmark observation rate')
+    parser.add_argument('-rt', '--target_obs_rate', type=float, default=25, help='Target observation rate')
+    parser.add_argument('-c', '--landmark_collision', type=bool, default=True, help='Use collision and avoidance system for landmarks')
     args = parser.parse_args()
 
-    str_alpha_values_gen = '0.015, 0.1, 0.5, 0.001'
-    str_alpha_values_algorithm = '0.015, 0.1, 0.5, 0.001'
-
     rospy.init_node('config_file_create')
-    if not rospy.has_param('/landmarks'):
-        print 'Please load landmark configuration into /landmarks parameter first'
+    if not rospy.has_param(args.landmarks_param):
+        print 'Please load landmark configuration into ' + args.landmarks_param + 'parameter first'
         sys.exit(0)
 
-    landmarks = rospy.get_param('/landmarks')
+    landmarks = rospy.get_param(args.landmarks_param)
 
     # create robots
     robot_list = []
@@ -127,7 +131,7 @@ if __name__ == '__main__':
     # generate a ball anywhere (x, y, z)
     ball = {'x': random.uniform(args.left, args.right),
             'y': random.uniform(args.down, args.up),
-            'z': random.uniform(0.0, 3.0)}
+            'z': random.uniform(0.5, 3.0)}
 
     # use rospkg to find the directory of this package
     rospack = rospkg.RosPack()
@@ -155,12 +159,12 @@ if __name__ == '__main__':
         ET.SubElement(node_robot, 'rosparam', param='initial_pose').text = str(robot.get_dict())
         ET.SubElement(node_robot, 'param', name='radius', value=str(args.radius))
         ET.SubElement(node_robot, 'param', name='height', value=str(args.height))
-        ET.SubElement(node_robot, 'rosparam', param='alphas').text = '[' + str_alpha_values_gen + ']'
-        ET.SubElement(node_robot, 'param', name='landmark_obs_rate', value='20')
-        ET.SubElement(node_robot, 'param', name='target_obs_rate', value='25')
-        ET.SubElement(node_robot, 'param', name='landmark_collision', value='True')
-        ET.SubElement(node_robot, 'param', name='landmark_obs_threshold', value='3.5')
-        ET.SubElement(node_robot, 'param', name='target_obs_threshold', value='3.5')
+        ET.SubElement(node_robot, 'rosparam', param='alphas').text = '[' + args.alpha_gen + ']'
+        ET.SubElement(node_robot, 'param', name='landmark_obs_rate', value=str(args.landmark_obs_rate))
+        ET.SubElement(node_robot, 'param', name='target_obs_rate', value=str(args.target_obs_rate))
+        ET.SubElement(node_robot, 'param', name='landmark_collision', value=str(args.landmark_collision))
+        ET.SubElement(node_robot, 'param', name='landmark_obs_threshold', value=str(args.threshold))
+        ET.SubElement(node_robot, 'param', name='target_obs_threshold', value=str(args.threshold))
 
         # robot odometry node
         node_odometry = ET.SubElement(launch, 'node', name=robot.name+'_odometry', pkg=PKG, type='odometry', output='screen')
@@ -198,7 +202,7 @@ if __name__ == '__main__':
     ET.SubElement(node_pfuclt, 'param', name='predict_model_stddev', value='25.0')
     ET.SubElement(node_pfuclt, 'param', name='particles', value=str(args.N * NUM_PARTICLES_FOR_ONE_ROBOT))
     for robot in robot_list:
-        ET.SubElement(node_pfuclt, 'param', name=robot.name.upper() + '_alpha', value=str_alpha_values_algorithm)
+        ET.SubElement(node_pfuclt, 'param', name=robot.name.upper() + '_alpha', value=args.alpha_alg)
     ET.SubElement(node_pfuclt, 'remap', {'from': '/pfuclt_orangeBallState', 'to': '/estimatedOrangeBallState'})
     ET.SubElement(node_pfuclt, 'remap', {'from': '/pfuclt_omni_poses', 'to': '/estimated_omni_poses'})
     ET.SubElement(node_pfuclt, 'remap', {'to': '/gtData', 'from': '/gtData_4robotExp'})
@@ -230,9 +234,9 @@ if __name__ == '__main__':
     str_particles = '['
     for robot in robot_list:
         for var in robot.x, robot.y, robot.theta:
-            str_particles += str(var-0.05) + ',' + str(var+0.05) + ','
+            str_particles += str(var-0.2) + ',' + str(var+0.2) + ','
     for var in [ball['x'], ball['y'], ball['z']]:
-        str_particles += str(var-0.05) + ',' + str(var+0.05) + ','
+        str_particles += str(var-0.2) + ',' + str(var+0.2) + ','
     str_particles = str_particles[:len(str_particles)-1] + ']'  # last comma becomes ]
     ET.SubElement(launch, 'rosparam', param='CUSTOM_PARTICLE_INIT').text = str_particles
 
