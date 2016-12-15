@@ -7,7 +7,8 @@ from visualization_msgs.msg import Marker, MarkerArray
 from randgen_omni_dataset.robot import norm2
 
 GLOBAL_FRAME = 'world'
-MAX_DIST = 5.0
+MAX_DIST = 3.5
+
 
 class OmniCustom():
     # This class will transform messages and TFs to our custom msg format for the OMNI dataset

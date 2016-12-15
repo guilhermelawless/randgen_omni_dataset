@@ -448,6 +448,10 @@ class Robot(object):
                 rospy.logwarn('TF Error - %s', err)
                 return
 
+            # Add some noise
+            lm_point_local.point.x += random.gauss(0, max(0.05, 0.025*lm_point_local.point.x))
+            lm_point_local.point.y += random.gauss(0, max(0.025, 0.025*lm_point_local.point.y))
+
             self.landmark_obs_local.append([lm_point_local.point.x, lm_point_local.point.y])
 
             # create a marker arrow to connect robot and landmark
@@ -500,6 +504,11 @@ class Robot(object):
         except tf.Exception, err:
             rospy.logdebug('TF Error - %s', err)
             return
+
+        # Add some noise
+        target_local.point.x += random.gauss(0, max(0.08, 0.05 * target_local.point.x))
+        target_local.point.y += random.gauss(0, max(0.08, 0.05 * target_local.point.y))
+        target_local.point.z += random.gauss(0, max(0.08, 0.05 * target_local.point.z))
 
         # create a marker arrow to connect robot and target
         marker = build_marker_arrow(target_local.point)
