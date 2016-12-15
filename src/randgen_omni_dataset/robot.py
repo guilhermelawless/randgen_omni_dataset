@@ -23,6 +23,7 @@ RADIUS_DEFAULT = 5.0
 HEIGHT_DEFAULT = 0.1
 CYLINDER_SCALE = 0.9
 
+
 def norm2(x, y):
     return math.sqrt(math.pow(x, 2) + math.pow(y, 2))
 
@@ -116,8 +117,8 @@ def check_occlusions(sensor, target, radius, obj):
 class Robot(object):
     # The Robot class holds the various robot components, such as odometry, laser-based observations, etc
 
-    def __init__(self, init_pose, name='OMNI_DEFAULT', target_freq=20, landmark_freq=20):
-        # type: (dict, str, int, int) -> None
+    def __init__(self, init_pose, name='OMNI_DEFAULT'):
+        # type: (dict, str) -> None
 
         # initial robot pose
         self.pose = init_pose
@@ -130,8 +131,28 @@ class Robot(object):
         # assertions for arguments
         assert isinstance(name, str)
         assert isinstance(self.pose, dict)
-        assert isinstance(target_freq, int)
-        assert isinstance(landmark_freq, int)
+
+        # robot name and namespace
+        self.name = name[1:]  # remove /
+        self.namespace = name
+
+        # parameters: landmarks, walls, playing robots, alphas
+        try:
+            self.lm_list = rospy.get_param('/landmarks')
+            self.alphas = rospy.get_param('~alphas')
+            walls = rospy.get_param('/walls')
+            playing_robots = rospy.get_param('PLAYING_ROBOTS')
+            landmark_freq = rospy.get_param('~landmark_obs_rate')
+            target_freq = rospy.get_param('~target_obs_rate')
+            self.landmark_collision = rospy.get_param('~landmark_collision')
+            self.threshold_obs_landmark = rospy.get_param('~landmark_obs_threshold')
+            self.threshold_obs_target = rospy.get_param('~target_obs_threshold')
+        except rospy.ROSException, err:
+            rospy.logerr('Error in parameter server - %s', err)
+            raise
+        except KeyError, err:
+            rospy.logerr('Value of %s not set', err)
+            raise
 
         # radius from parameter server, private for this node
         self.radius = rospy.get_param('~radius', RADIUS_DEFAULT)
@@ -145,25 +166,11 @@ class Robot(object):
         self.target_timer_period = 1.0/target_freq
         self.target_timer = None
 
-        # robot name and namespace
-        self.name = name[1:]  # remove /
-        self.namespace = name
-
         # frame
         self.frame = self.name
 
-        # parameters: landmarks, walls, playing robots, alphas
-        try:
-            self.lm_list = rospy.get_param('/landmarks')
-            self.alphas = rospy.get_param('~alphas')
-            walls = rospy.get_param('/walls')
-            playing_robots = rospy.get_param('PLAYING_ROBOTS')
-        except rospy.ROSException, err:
-            rospy.logerr('Error in parameter server - %s', err)
-            raise
-        except KeyError, err:
-            rospy.logerr('Value of %s not set', err)
-            raise
+        # landmark global observations need to be stored
+        self.landmark_obs_local = None
 
         # build walls list from the dictionary
         # tuple -> (location, variable to check, reference angle)
@@ -266,10 +273,10 @@ class Robot(object):
 
         # set or shutdown timers
         if self.is_running:
-            self.landmark_timer = rospy.Timer(rospy.Duration(self.landmark_timer_period),
+            self.landmark_timer = rospy.Timer(rospy.Duration(nsecs=int(1e9*self.landmark_timer_period)),
                                               self.generate_landmark_observations)
 
-            self.target_timer = rospy.Timer(rospy.Duration(self.target_timer_period),
+            self.target_timer = rospy.Timer(rospy.Duration(nsecs=int(1e9*self.target_timer_period)),
                                             self.generate_target_observation)
         else:
             self.landmark_timer.shutdown()
@@ -290,6 +297,9 @@ class Robot(object):
         if not self.is_running:
             return
 
+        # add to current pose using custom msg type (easier to add)
+        self.add_odometry(msg)
+
         # convert to normal odometry msg, self.msg_odometry will be updated
         self.convert_odometry(msg)
 
@@ -298,9 +308,6 @@ class Robot(object):
             self.pub_odometry.publish(self.msg_odometry)
         except rospy.ROSException, err:
             rospy.logdebug('ROSException - %s', err)
-
-        # add to current pose using custom msg type (easier to add)
-        self.add_odometry(msg)
 
         # print as debug
         # rospy.logdebug(self.pose_to_str())
@@ -320,8 +327,8 @@ class Robot(object):
 
         # when rotating and no longer flagged for collision, start a timer before walking forward
         if self.is_rotating and not collision:
-            # keep rotating for 1 < rand < 5 secs
-            rospy.Timer(rospy.Duration(random.randint(1, 4), random.randint(0, 1e9)), self.stop_rotating, oneshot=True)
+            # keep rotating for 0 < rand < 1 secs
+            rospy.Timer(rospy.Duration(nsecs=random.randint(0, 1e9)), self.stop_rotating, oneshot=True)
             self.rotating_timer_set = True
 
         # when walking forward if collision detected, start rotating
@@ -426,6 +433,8 @@ class Robot(object):
         lm_point.header.frame_id = BASE_FRAME
         lm_point.header.stamp = stamp
 
+        self.landmark_obs_local = list()
+
         # for all landmarks
         for lm in self.lm_list:
             lm_point.point.x = lm[0]
@@ -439,15 +448,14 @@ class Robot(object):
                 rospy.logwarn('TF Error - %s', err)
                 return
 
+            self.landmark_obs_local.append([lm_point_local.point.x, lm_point_local.point.y])
+
             # create a marker arrow to connect robot and landmark
             marker = build_marker_arrow(lm_point_local.point)
             marker.header.frame_id = self.frame
             marker.header.stamp = rospy.Time.now()
             marker.ns = self.namespace+'/landmarkObs'
             marker.id = marker_id
-
-            markers.markers.append(marker)
-            marker_id += 1
 
             # check occlusions
             for idx, name, pose_global, pose_local in self.otherRobots:
@@ -462,6 +470,15 @@ class Robot(object):
                     marker.text = 'NotSeen'
                 else:
                     marker.text = 'Seen'
+
+            # if distance < threshold, not seen and paint as blue
+            if norm2(lm_point_local.point.x, lm_point_local.point.y) > self.threshold_obs_landmark:
+                marker.text = 'NotSeen'
+                marker.color.r = 0
+                marker.color.b = 1.0
+
+            markers.markers.append(marker)
+            marker_id += 1
 
         try:
             self.pub_landmark_observations.publish(markers)
@@ -507,6 +524,12 @@ class Robot(object):
             else:
                 marker.text = 'Seen'
 
+            # if distance < threshold, not seen and paint as blue
+            if norm2(target_local.point.x, target_local.point.y) > self.threshold_obs_target:
+                marker.text = 'NotSeen'
+                marker.color.r = 0
+                marker.color.b = 1.0
+
         try:
             self.pub_target_observation.publish(marker)
         except rospy.ROSException, err:
@@ -548,10 +571,19 @@ class Robot(object):
         # type () -> boolean
 
         for location, variable, reference_angle in self.walls:
-            if abs(self.pose[variable] - location) < MAX_DIST_FROM_WALLS and \
+            if abs(self.pose[variable] - location) < (self.radius + MAX_DIST_FROM_WALLS) and \
                     abs(normalize_angle(self.pose['theta'] - reference_angle)) < MAX_ANGLE_FROM_WALLS:
                 # Future collision detected
                 return True
+
+        if self.landmark_collision is True and self.landmark_obs_local is not None:
+            for x, y in self.landmark_obs_local:
+                dist = norm2(x, y)
+                ang = normalize_angle(math.atan2(y, x))
+
+                # if close to landmark and going to walk into it, return collision
+                if x > 0 and dist < (self.radius + 0.3) and abs(ang) < pi/3:
+                    return True
 
         # No collision
         return False
