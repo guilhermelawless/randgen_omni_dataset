@@ -54,8 +54,12 @@ At the moment, the target simulation is quite rough, and contributions to this m
 Using with PF-UCLT
 ==================================
 
-While generating your data / after recording to a rosbag file, you can use [pfuclt\_omni\_dataset](https://github.com/guilhermelawless/pfuclt_omni_dataset) to try localization and target tracking.
+After recording to a rosbag file, you can use [pfuclt\_omni\_dataset](https://github.com/guilhermelawless/pfuclt_omni_dataset) to try localization and target tracking.
 
 To accomplish this, when the executing the create\_launch\_file script, it will generate a file in your the pfuclt package launch folder to work with it. By default, it will be named new.launch, so you can execute it with: `roslaunch pfuclt_omni_dataset new.launch`
 
-Use the rviz config file pfuclt\_omni\_dataset/config/omni_sim.rviz to visualize the algorithm in rviz.
+Please edit this file first, or use the path argument to specify the location of a omni_simulated.bag file. Also, if you need, use the rate argument to set different rosbag playing rates.
+
+Use the rviz config file pfuclt\_omni\_dataset/config/omni_sim.rviz to visualize the algorithm in rviz. *Important*: you need to execute rviz only after setting the /use_sim_time parameter to true, which is done by calling the launch file above.
+
+You will know everything is working if the PF-UCLT node outputs an odometry frequency of 33Hz (by default) almost consistently. If it goes below this value, the algorithm is causing odometry readings to be delayed, so it can't keep up and you should lower the rosbag playing rate.
