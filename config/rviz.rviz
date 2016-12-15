@@ -63,6 +63,8 @@ Visualization Manager:
         All Enabled: true
         omni1:
           Value: true
+        omni10:
+          Value: true
         omni2:
           Value: true
         omni3:
@@ -71,16 +73,26 @@ Visualization Manager:
           Value: true
         omni5:
           Value: true
+        omni6:
+          Value: true
+        omni7:
+          Value: true
+        omni8:
+          Value: true
+        omni9:
+          Value: true
         world:
           Value: true
       Marker Scale: 2
       Name: TF
-      Show Arrows: true
+      Show Arrows: false
       Show Axes: true
       Show Names: true
       Tree:
         world:
           omni1:
+            {}
+          omni10:
             {}
           omni2:
             {}
@@ -89,6 +101,14 @@ Visualization Manager:
           omni4:
             {}
           omni5:
+            {}
+          omni6:
+            {}
+          omni7:
+            {}
+          omni8:
+            {}
+          omni9:
             {}
       Update Interval: 0
       Value: true
@@ -367,7 +387,7 @@ Visualization Manager:
           Marker Topic: /omni6/targetObs
           Name: targetObervations
           Namespaces:
-            {}
+            /omni6/targetObs: true
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -375,7 +395,7 @@ Visualization Manager:
           Marker Topic: /omni6/poseMarker
           Name: Cylinder
           Namespaces:
-            {}
+            omni6: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -410,7 +430,7 @@ Visualization Manager:
           Marker Topic: /omni7/targetObs
           Name: targetObervations
           Namespaces:
-            {}
+            /omni7/targetObs: true
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -418,7 +438,7 @@ Visualization Manager:
           Marker Topic: /omni7/poseMarker
           Name: Cylinder
           Namespaces:
-            {}
+            omni7: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -453,7 +473,7 @@ Visualization Manager:
           Marker Topic: /omni8/targetObs
           Name: targetObervations
           Namespaces:
-            {}
+            /omni8/targetObs: true
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -461,7 +481,7 @@ Visualization Manager:
           Marker Topic: /omni8/poseMarker
           Name: Cylinder
           Namespaces:
-            {}
+            omni8: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -496,7 +516,7 @@ Visualization Manager:
           Marker Topic: /omni9/targetObs
           Name: targetObervations
           Namespaces:
-            {}
+            /omni9/targetObs: true
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -504,7 +524,7 @@ Visualization Manager:
           Marker Topic: /omni9/poseMarker
           Name: Cylinder
           Namespaces:
-            {}
+            omni9: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -539,7 +559,7 @@ Visualization Manager:
           Marker Topic: /omni10/targetObs
           Name: targetObervations
           Namespaces:
-            {}
+            /omni10/targetObs: true
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -547,7 +567,7 @@ Visualization Manager:
           Marker Topic: /omni10/poseMarker
           Name: Cylinder
           Namespaces:
-            {}
+            omni10: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -576,22 +596,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 16.745
+      Distance: 20.3856
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 5.01444
-        Y: 0.730014
-        Z: 0.876437
+        X: 5.69296
+        Y: -1.24683
+        Z: 0.855779
       Name: Current View
       Near Clip Distance: 0.01
       Pitch: 1.5698
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.5804
+      Yaw: 4.7154
     Saved: ~
 Window Geometry:
   Displays:
