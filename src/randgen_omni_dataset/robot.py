@@ -21,7 +21,7 @@ MAX_DIST_FROM_WALLS = 0.2
 MAX_ANGLE_FROM_WALLS = pi/2.0
 RADIUS_DEFAULT = 5.0
 HEIGHT_DEFAULT = 0.1
-
+CYLINDER_SCALE = 0.9
 
 def norm2(x, y):
     return math.sqrt(math.pow(x, 2) + math.pow(y, 2))
@@ -198,7 +198,7 @@ class Robot(object):
         self.cylinder.header.frame_id = self.frame
         self.cylinder.action = Marker.ADD
         self.cylinder.type = Marker.CYLINDER
-        self.cylinder.scale.x = self.cylinder.scale.y = self.radius * 2.0
+        self.cylinder.scale.x = self.cylinder.scale.y = self.radius * 2.0 * CYLINDER_SCALE
         self.cylinder.scale.z = self.height
         # x and y are 0 because local frame, z is negative because the local frame is defined at height
         self.cylinder.pose.position.z = -self.height / 2.0
