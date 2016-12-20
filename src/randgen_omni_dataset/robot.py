@@ -6,7 +6,7 @@ from math import pi, fmod
 import tf
 import tf.transformations
 from geometry_msgs.msg import PoseWithCovariance, PoseStamped, Point, PointStamped, Quaternion
-from std_msgs.msg import Header
+from std_msgs.msg import Header, ColorRGBA
 from nav_msgs.msg import Odometry as odometryMsg
 from randgen_omni_dataset.odometry import customOdometryMsg
 from visualization_msgs.msg import MarkerArray, Marker
@@ -54,8 +54,7 @@ def build_marker_arrow(head):
     marker.scale.x = 0.01
     marker.scale.y = 0.03
     marker.scale.z = 0.05
-    marker.color.a = 1
-    marker.color.r = marker.color.g = marker.color.b = 0.2
+    marker.color = ColorRGBA(0.2, 0.2, 0.2, 1)
 
     # tail is 0,0,0
     marker.points.append(Point())
@@ -209,10 +208,7 @@ class Robot(object):
         self.cylinder.scale.z = self.height
         # x and y are 0 because local frame, z is negative because the local frame is defined at height
         self.cylinder.pose.position.z = -self.height / 2.0
-        self.cylinder.color.a = 1.0
-        self.cylinder.color.r = 0.5
-        self.cylinder.color.g = 0.5
-        self.cylinder.color.b = 0.5
+        self.cylinder.color = ColorRGBA(0.5, 0.5, 0.5, 1.0)
         self.cylinder.ns = self.name
 
         # odometry service
@@ -461,7 +457,16 @@ class Robot(object):
             marker.ns = self.namespace+'/landmarkObs'
             marker.id = marker_id
 
-            # check occlusions
+            # paint as green
+            marker.color = ColorRGBA(0.1, 1.0, 0.1, 1.0)
+
+            # if distance > threshold, not seen and paint as yellow
+            if norm2(lm_point_local.point.x, lm_point_local.point.y) > self.threshold_obs_landmark:
+                marker.text = 'NotSeen'
+                # Yellow color
+                marker.color = ColorRGBA(0.8, 0.8, 0.1, 1.0)
+
+            # check occlusions, if occluded paint as red
             for idx, name, pose_global, pose_local in self.otherRobots:
                 if pose_local is False:
                     continue
@@ -470,16 +475,11 @@ class Robot(object):
                                     [lm_point_local.point.x, lm_point_local.point.y],
                                     self.radius,  # assume same radius for all robots
                                     [pose_local.pose.position.x, pose_local.pose.position.y]):
-                    marker.color.r = 1.0
+                    # Red color
+                    marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
                     marker.text = 'NotSeen'
                 else:
                     marker.text = 'Seen'
-
-            # if distance < threshold, not seen and paint as blue
-            if norm2(lm_point_local.point.x, lm_point_local.point.y) > self.threshold_obs_landmark:
-                marker.text = 'NotSeen'
-                marker.color.r = 0
-                marker.color.b = 1.0
 
             markers.markers.append(marker)
             marker_id += 1
@@ -516,9 +516,17 @@ class Robot(object):
         marker.header.stamp = rospy.Time.now()
         marker.ns = self.namespace + '/targetObs'
         marker.id = marker_id
-        marker.color.g = 1.0
 
-        # check occlusions
+        # paint as green
+        marker.color = ColorRGBA(0.1, 1.0, 0.1, 1.0)
+
+        # if distance < threshold, not seen and paint as yellow
+        if norm2(target_local.point.x, target_local.point.y) > self.threshold_obs_target:
+            marker.text = 'NotSeen'
+            # Yellow color
+            marker.color = ColorRGBA(0.8, 0.8, 0.1, 1.0)
+
+        # check occlusions, if occluded paint as red
         for idx, name, pose_global, pose_local in self.otherRobots:
             if pose_local is False:
                 continue
@@ -527,17 +535,11 @@ class Robot(object):
                                 [target_local.point.x, target_local.point.y],
                                 self.radius,  # assume same radius for all robots
                                 [pose_local.pose.position.x, pose_local.pose.position.y]):
-                marker.color.g = 0.0
-                marker.color.r = 1.0
+                # Red color
+                marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
                 marker.text = 'NotSeen'
             else:
                 marker.text = 'Seen'
-
-            # if distance < threshold, not seen and paint as blue
-            if norm2(target_local.point.x, target_local.point.y) > self.threshold_obs_target:
-                marker.text = 'NotSeen'
-                marker.color.r = 0
-                marker.color.b = 1.0
 
         try:
             self.pub_target_observation.publish(marker)
