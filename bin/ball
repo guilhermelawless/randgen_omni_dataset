@@ -3,7 +3,7 @@
 import rospy
 from randgen_omni_dataset import ball
 
-LOG_LEVEL = rospy.DEBUG
+LOG_LEVEL = rospy.INFO
 FREQ_PUB_DEF = 33
 
 if __name__ == '__main__':
