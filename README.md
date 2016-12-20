@@ -60,6 +60,6 @@ To accomplish this, when the executing the create\_launch\_file script, it will 
 
 Please edit this file first, or use the path argument to specify the location of a omni_simulated.bag file. Also, if you need, use the rate argument to set different rosbag playing rates.
 
-Use the rviz config file pfuclt\_omni\_dataset/config/omni_sim.rviz to visualize the algorithm in rviz. *Important*: you need to execute rviz only after setting the /use_sim_time parameter to true, which is done by calling the launch file above.
+Use the rviz config file pfuclt\_omni\_dataset/config/omni_sim.rviz to visualize the algorithm in rviz. **Important**: you need to execute rviz only after setting the /use_sim_time parameter to true, which is done by calling the launch file above.
 
 You will know everything is working if the PF-UCLT node outputs an odometry frequency of 33Hz (by default) almost consistently. If it goes below this value, the algorithm is causing odometry readings to be delayed, so it can't keep up and you should lower the rosbag playing rate.

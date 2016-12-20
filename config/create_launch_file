@@ -185,13 +185,13 @@ if __name__ == '__main__':
 
     # general parameters to be modified
     ET.SubElement(launch, 'param', name='use_sim_time', value='true')
-    ET.SubElement(launch, 'arg', name='path', default='/home/$(optenv USER gsl)/datasets/omni_sim')
+    ET.SubElement(launch, 'arg', name='path', default='/home/$(optenv USER gsl)/datasets/omni_sim/omni_simulated.bag')
     ET.SubElement(launch, 'arg', name='debug', default='false')
     ET.SubElement(launch, 'arg', name='publish', default='true')
     ET.SubElement(launch, 'arg', name='rate', default='1.0')
 
     # the rosbag node
-    str_args = '--quiet --clock --rate=$(arg rate) $(arg path)/omni_simulated.bag'
+    str_args = '--quiet --clock --rate=$(arg rate) $(arg path)'
     ET.SubElement(launch, 'node', pkg='rosbag', type='play', name='player', output='screen', args=str_args)
 
     # the performer node
