@@ -457,8 +457,9 @@ class Robot(object):
             marker.ns = self.namespace+'/landmarkObs'
             marker.id = marker_id
 
-            # paint as green
+            # paint as green and mark as seen by default
             marker.color = ColorRGBA(0.1, 1.0, 0.1, 1.0)
+            marker.text = 'Seen'
 
             # if distance > threshold, not seen and paint as yellow
             if norm2(lm_point_local.point.x, lm_point_local.point.y) > self.threshold_obs_landmark:
@@ -478,8 +479,6 @@ class Robot(object):
                     # Red color
                     marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
                     marker.text = 'NotSeen'
-                else:
-                    marker.text = 'Seen'
 
             markers.markers.append(marker)
             marker_id += 1
@@ -517,8 +516,9 @@ class Robot(object):
         marker.ns = self.namespace + '/targetObs'
         marker.id = marker_id
 
-        # paint as green
+        # paint as green and mark as seen by default
         marker.color = ColorRGBA(0.1, 1.0, 0.1, 1.0)
+        marker.text = 'Seen'
 
         # if distance < threshold, not seen and paint as yellow
         if norm2(target_local.point.x, target_local.point.y) > self.threshold_obs_target:
@@ -538,8 +538,6 @@ class Robot(object):
                 # Red color
                 marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
                 marker.text = 'NotSeen'
-            else:
-                marker.text = 'Seen'
 
         try:
             self.pub_target_observation.publish(marker)
