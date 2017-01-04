@@ -23,6 +23,8 @@ RADIUS_DEFAULT = 5.0
 HEIGHT_DEFAULT = 0.1
 CYLINDER_SCALE = 0.9
 
+GENERATE_OBSERVATIONS_MULTIPLIER = 2
+
 
 def norm2(x, y):
     return math.sqrt(math.pow(x, 2) + math.pow(y, 2))
@@ -164,6 +166,7 @@ class Robot(object):
         self.landmark_timer = None
         self.target_timer_period = 1.0/target_freq
         self.target_timer = None
+        self.generate_observations_counter = 0;
 
         # frame
         self.frame = self.name
@@ -267,16 +270,16 @@ class Robot(object):
         # update state
         self.is_running = flag
 
-        # set or shutdown timers
-        if self.is_running:
-            self.landmark_timer = rospy.Timer(rospy.Duration(nsecs=int(1e9*self.landmark_timer_period)),
-                                              self.generate_landmark_observations)
-
-            self.target_timer = rospy.Timer(rospy.Duration(nsecs=int(1e9*self.target_timer_period)),
-                                            self.generate_target_observation)
-        else:
-            self.landmark_timer.shutdown()
-            self.target_timer.shutdown()
+        # # set or shutdown timers
+        # if self.is_running:
+        #     self.landmark_timer = rospy.Timer(rospy.Duration(nsecs=int(1e9*self.landmark_timer_period)),
+        #                                       self.generate_landmark_observations)
+        #
+        #     self.target_timer = rospy.Timer(rospy.Duration(nsecs=int(1e9*self.target_timer_period)),
+        #                                     self.generate_target_observation)
+        # else:
+        #     self.landmark_timer.shutdown()
+        #     self.target_timer.shutdown()
 
     @staticmethod
     def loop():
@@ -309,7 +312,14 @@ class Robot(object):
         # rospy.logdebug(self.pose_to_str())
 
         # publish current pose
-        self.publish_rviz_gt()
+        self.publish_rviz_gt(msg.header.stamp)
+
+        # check if time to generate observations
+        self.generate_observations_counter += 1
+        if self.generate_observations_counter >= GENERATE_OBSERVATIONS_MULTIPLIER:
+            self.generate_observations_counter = 0
+            self.generate_landmark_observations(None)
+            self.generate_target_observation(None)
 
         # if rotating timer is set, don't even check for collisions
         if self.rotating_timer_set:
@@ -395,7 +405,7 @@ class Robot(object):
         if stamp is None:
             stamp = rospy.Time.now()
 
-        assert isinstance(stamp, rospy.Time)
+        # assert isinstance(stamp, rospy.Time)
 
         quaternion = tf.transformations.quaternion_about_axis(self.pose['theta'], [0, 0, 1])
 
@@ -445,8 +455,8 @@ class Robot(object):
                 return
 
             # Add some noise
-            lm_point_local.point.x += random.gauss(0, max(0.08, 0.02 * math.sqrt(abs(lm_point_local.point.x))))
-            lm_point_local.point.y += random.gauss(0, max(0.08, 0.02 * math.sqrt(abs(lm_point_local.point.y))))
+            #lm_point_local.point.x += random.gauss(0, max(0.08, 0.02 * math.sqrt(abs(lm_point_local.point.x))))
+            #lm_point_local.point.y += random.gauss(0, max(0.08, 0.02 * math.sqrt(abs(lm_point_local.point.y))))
 
             self.landmark_obs_local.append([lm_point_local.point.x, lm_point_local.point.y])
 
@@ -505,9 +515,9 @@ class Robot(object):
             return
 
         # Add some noise
-        target_local.point.x += random.gauss(0, max(0.08, 0.05 * math.sqrt(abs(target_local.point.x))))
-        target_local.point.y += random.gauss(0, max(0.08, 0.05 * math.sqrt(abs(target_local.point.y))))
-        target_local.point.z += random.gauss(0, max(0.05, 0.02 * math.sqrt(abs(target_local.point.z))))
+        #target_local.point.x += random.gauss(0, max(0.08, 0.05 * math.sqrt(abs(target_local.point.x))))
+        #target_local.point.y += random.gauss(0, max(0.08, 0.05 * math.sqrt(abs(target_local.point.y))))
+        #target_local.point.z += random.gauss(0, max(0.05, 0.02 * math.sqrt(abs(target_local.point.z))))
 
         # create a marker arrow to connect robot and target
         marker = build_marker_arrow(target_local.point)
