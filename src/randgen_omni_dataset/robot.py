@@ -143,8 +143,6 @@ class Robot(object):
             self.alphas = rospy.get_param('~alphas')
             walls = rospy.get_param('/walls')
             playing_robots = rospy.get_param('PLAYING_ROBOTS')
-            landmark_freq = rospy.get_param('~landmark_obs_rate')
-            target_freq = rospy.get_param('~target_obs_rate')
             self.landmark_collision = rospy.get_param('~landmark_collision')
             self.threshold_obs_landmark = rospy.get_param('~landmark_obs_threshold')
             self.threshold_obs_target = rospy.get_param('~target_obs_threshold')
@@ -155,18 +153,14 @@ class Robot(object):
             rospy.logerr('Value of %s not set', err)
             raise
 
+        # observations counter
+        self.generate_observations_counter = 0
+
         # radius from parameter server, private for this node
         self.radius = rospy.get_param('~radius', RADIUS_DEFAULT)
 
         # height from parameter server, private for this node
         self.height = rospy.get_param('~height', HEIGHT_DEFAULT)
-
-        # timers for observation callbacks
-        self.landmark_timer_period = 1.0/landmark_freq
-        self.landmark_timer = None
-        self.target_timer_period = 1.0/target_freq
-        self.target_timer = None
-        self.generate_observations_counter = 0;
 
         # frame
         self.frame = self.name
@@ -269,17 +263,6 @@ class Robot(object):
 
         # update state
         self.is_running = flag
-
-        # # set or shutdown timers
-        # if self.is_running:
-        #     self.landmark_timer = rospy.Timer(rospy.Duration(nsecs=int(1e9*self.landmark_timer_period)),
-        #                                       self.generate_landmark_observations)
-        #
-        #     self.target_timer = rospy.Timer(rospy.Duration(nsecs=int(1e9*self.target_timer_period)),
-        #                                     self.generate_target_observation)
-        # else:
-        #     self.landmark_timer.shutdown()
-        #     self.target_timer.shutdown()
 
     @staticmethod
     def loop():

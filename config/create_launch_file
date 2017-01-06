@@ -12,7 +12,6 @@ from xml.dom import minidom
 
 THETA_RANGE = (-math.pi, math.pi)
 PKG = 'randgen_omni_dataset'
-NUM_PARTICLES_FOR_ONE_ROBOT = 50
 
 
 def prettify(elem):
@@ -79,10 +78,12 @@ if __name__ == '__main__':
     parser.add_argument('-ag', '--alpha_gen', type=str, default='0.015, 0.1, 0.5, 0.001', help='Alpha values for generating odometry')
     parser.add_argument('-aa', '--alpha_alg', type=str, default='0.015, 0.1, 0.5, 0.001', help='Alpha values for the PF-UCLT algorithm')
     parser.add_argument('-L', '--landmarks_param', type=str, default='/landmarks', help='Parameter with landmarks positions')
-    parser.add_argument('-rl', '--landmark_obs_rate', type=float, default=20, help='Landmark observation rate')
-    parser.add_argument('-rt', '--target_obs_rate', type=float, default=25, help='Target observation rate')
     parser.add_argument('-c', '--landmark_collision', type=bool, default=True, help='Use collision and avoidance system for landmarks')
     parser.add_argument('-s', '--target_model_stddev', type=float, default=30, help='Standard deviation to use when predicting the target in PF-UCLT')
+    parser.add_argument('-D', '--dataset_path', type=str, default='/home/$(optenv USER gsl)/datasets/omni_sim/', help='Path to save dataset (rosbag file), without file name')
+    parser.add_argument('-b', '--bag', type=str, default='omni_simulated.bag', help='Rosbag file to record and then play from')
+    parser.add_argument('-p', '--num_particles', type=int, default='250', help='Number of particles that PF-UCLT will use')
+    parser.add_argument('-ra', '--rate', type=float, default='1', help='Rate at which the rosbag file will play during PF-UCLT')
     args = parser.parse_args()
 
     rospy.init_node('config_file_create')
@@ -142,6 +143,9 @@ if __name__ == '__main__':
     # now write the launch file
     launch = ET.Element("launch")
 
+    # parameter use_sim_time
+    ET.SubElement(launch, 'param', name='use_sim_time', value='false')
+
     # parameter PLAYING_ROBOTS
     ET.SubElement(launch, 'rosparam', param='PLAYING_ROBOTS').text = str([1]*args.N)
 
@@ -161,8 +165,6 @@ if __name__ == '__main__':
         ET.SubElement(node_robot, 'param', name='radius', value=str(args.radius))
         ET.SubElement(node_robot, 'param', name='height', value=str(args.height))
         ET.SubElement(node_robot, 'rosparam', param='alphas').text = '[' + args.alpha_gen + ']'
-        ET.SubElement(node_robot, 'param', name='landmark_obs_rate', value=str(args.landmark_obs_rate))
-        ET.SubElement(node_robot, 'param', name='target_obs_rate', value=str(args.target_obs_rate))
         ET.SubElement(node_robot, 'param', name='landmark_collision', value=str(args.landmark_collision))
         ET.SubElement(node_robot, 'param', name='landmark_obs_threshold', value=str(args.threshold))
         ET.SubElement(node_robot, 'param', name='target_obs_threshold', value=str(args.threshold))
@@ -185,10 +187,10 @@ if __name__ == '__main__':
 
     # general parameters to be modified
     ET.SubElement(launch, 'param', name='use_sim_time', value='true')
-    ET.SubElement(launch, 'arg', name='path', default='/home/$(optenv USER gsl)/datasets/omni_sim/omni_simulated.bag')
+    ET.SubElement(launch, 'arg', name='path', default=args.dataset_path + args.bag)
     ET.SubElement(launch, 'arg', name='debug', default='false')
     ET.SubElement(launch, 'arg', name='publish', default='true')
-    ET.SubElement(launch, 'arg', name='rate', default='1.0')
+    ET.SubElement(launch, 'arg', name='rate', default=str(args.rate))
 
     # the rosbag node
     str_args = '--quiet --clock --rate=$(arg rate) $(arg path)'
@@ -199,13 +201,11 @@ if __name__ == '__main__':
                                 pkg='pfuclt_omni_dataset', type='pfuclt_omni_dataset', output='screen',
                                 args='--debug $(arg debug) --publish $(arg publish)')
     ET.SubElement(node_pfuclt, 'param', name='percentage_to_keep', value='50')
-    ET.SubElement(node_pfuclt, 'param', name='velocity_estimator_stack_size', value='15')
+    ET.SubElement(node_pfuclt, 'param', name='velocity_estimator_stack_size', value='10')
     ET.SubElement(node_pfuclt, 'param', name='predict_model_stddev', value=str(args.target_model_stddev))
-    ET.SubElement(node_pfuclt, 'param', name='particles', value=str(args.N * NUM_PARTICLES_FOR_ONE_ROBOT))
+    ET.SubElement(node_pfuclt, 'param', name='particles', value=str(args.num_particles))
     for robot in robot_list:
         ET.SubElement(node_pfuclt, 'param', name=robot.name.upper() + '_alpha', value=args.alpha_alg)
-    ET.SubElement(node_pfuclt, 'remap', {'from': '/pfuclt_orangeBallState', 'to': '/estimatedOrangeBallState'})
-    ET.SubElement(node_pfuclt, 'remap', {'from': '/pfuclt_omni_poses', 'to': '/estimated_omni_poses'})
     ET.SubElement(node_pfuclt, 'remap', {'to': '/gtData', 'from': '/gtData_4robotExp'})
 
     # other parameters
