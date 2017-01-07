@@ -146,6 +146,7 @@ class Robot(object):
             self.landmark_collision = rospy.get_param('~landmark_collision')
             self.threshold_obs_landmark = rospy.get_param('~landmark_obs_threshold')
             self.threshold_obs_target = rospy.get_param('~target_obs_threshold')
+            self.occlusions = rospy.get_param('~occlusions')
         except rospy.ROSException, err:
             rospy.logerr('Error in parameter server - %s', err)
             raise
@@ -461,20 +462,21 @@ class Robot(object):
                 marker.color = ColorRGBA(0.8, 0.8, 0.1, 1.0)
 
             # check occlusions, if occluded paint as red
-            for idx, name, pose_global, pose_local in self.otherRobots:
-                if pose_local is False:
-                    continue
+            if self.occlusions is True:
+                for idx, name, pose_global, pose_local in self.otherRobots:
+                    if pose_local is False:
+                        continue
 
-                if check_occlusions([0, 0],
-                                    [lm_point_local.point.x, lm_point_local.point.y],
-                                    self.radius,  # assume same radius for all robots
-                                    [pose_local.pose.position.x, pose_local.pose.position.y]):
-                    # Red color
-                    marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
-                    marker.text = 'NotSeen'
+                    if check_occlusions([0, 0],
+                                        [lm_point_local.point.x, lm_point_local.point.y],
+                                        self.radius,  # assume same radius for all robots
+                                        [pose_local.pose.position.x, pose_local.pose.position.y]):
+                        # Red color
+                        marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
+                        marker.text = 'NotSeen'
 
-            markers.markers.append(marker)
-            marker_id += 1
+                markers.markers.append(marker)
+                marker_id += 1
 
         try:
             self.pub_landmark_observations.publish(markers)
@@ -520,17 +522,18 @@ class Robot(object):
             marker.color = ColorRGBA(0.8, 0.8, 0.1, 1.0)
 
         # check occlusions, if occluded paint as red
-        for idx, name, pose_global, pose_local in self.otherRobots:
-            if pose_local is False:
-                continue
+        if self.occlusions is True:
+            for idx, name, pose_global, pose_local in self.otherRobots:
+                if pose_local is False:
+                    continue
 
-            if check_occlusions([0, 0],
-                                [target_local.point.x, target_local.point.y],
-                                self.radius,  # assume same radius for all robots
-                                [pose_local.pose.position.x, pose_local.pose.position.y]):
-                # Red color
-                marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
-                marker.text = 'NotSeen'
+                if check_occlusions([0, 0],
+                                    [target_local.point.x, target_local.point.y],
+                                    self.radius,  # assume same radius for all robots
+                                    [pose_local.pose.position.x, pose_local.pose.position.y]):
+                    # Red color
+                    marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
+                    marker.text = 'NotSeen'
 
         try:
             self.pub_target_observation.publish(marker)
