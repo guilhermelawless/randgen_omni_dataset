@@ -475,8 +475,8 @@ class Robot(object):
                         marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
                         marker.text = 'NotSeen'
 
-                markers.markers.append(marker)
-                marker_id += 1
+            markers.markers.append(marker)
+            marker_id += 1
 
         try:
             self.pub_landmark_observations.publish(markers)
