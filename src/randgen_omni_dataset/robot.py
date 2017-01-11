@@ -524,18 +524,28 @@ class Robot(object):
 
         # check occlusions, if occluded paint as red
         if self.occlusions is True:
-            for idx, name, pose_global, pose_local in self.otherRobots:
-                if pose_local is False:
-                    continue
+            # check if target is inside self
+            if math.sqrt(math.pow(target_local.point.x, 2)
+                        +math.pow(target_local.point.y, 2)) < self.radius\
+                    and target_local.point.z < self.height:
+                # Red color
+                marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
+                marker.text = 'NotSeen'
+                print 'you got it ' + self.name
 
-                if check_occlusions([0, 0],
-                                    [target_local.point.x, target_local.point.y],
-                                    self.radius,  # assume same radius for all robots
-                                    [pose_local.pose.position.x, pose_local.pose.position.y]):
-                    # Red color
-                    marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
-                    marker.text = 'NotSeen'
-                    break
+            else:
+                for idx, name, pose_global, pose_local in self.otherRobots:
+                    if pose_local is False:
+                        continue
+
+                    if check_occlusions([0, 0],
+                                        [target_local.point.x, target_local.point.y],
+                                        self.radius,  # assume same radius for all robots
+                                        [pose_local.pose.position.x, pose_local.pose.position.y]):
+                        # Red color
+                        marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
+                        marker.text = 'NotSeen'
+                        break
 
         try:
             self.pub_target_observation.publish(marker)
