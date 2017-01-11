@@ -70,7 +70,7 @@ def build_marker_arrow(head):
 def check_occlusions(sensor, target, radius, obj):
     # type: (list, list, float, list) -> bool
 
-    # This function checks if parameter object is being occluded by the target, when seen from sensor
+    # This function checks if parameter target is being occluded by the object, when seen from sensor
     # Return is true if object is occluded and false otherwise
 
     # Note that the checking is done only in the 2D xy plane
@@ -474,6 +474,7 @@ class Robot(object):
                         # Red color
                         marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
                         marker.text = 'NotSeen'
+                        break
 
             markers.markers.append(marker)
             marker_id += 1
@@ -534,6 +535,7 @@ class Robot(object):
                     # Red color
                     marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
                     marker.text = 'NotSeen'
+                    break
 
         try:
             self.pub_target_observation.publish(marker)
