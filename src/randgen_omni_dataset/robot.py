@@ -6,7 +6,7 @@ from math import pi, fmod
 import tf
 import tf.transformations
 from geometry_msgs.msg import PoseWithCovariance, PoseStamped, Point, PointStamped, Quaternion
-from std_msgs.msg import Header, ColorRGBA
+from std_msgs.msg import Header, ColorRGBA, Float32
 from nav_msgs.msg import Odometry as odometryMsg
 from randgen_omni_dataset.odometry import customOdometryMsg
 from visualization_msgs.msg import MarkerArray, Marker
@@ -228,6 +228,7 @@ class Robot(object):
         self.pub_landmark_observations = rospy.Publisher(self.namespace + '/landmarkObs', MarkerArray, queue_size=5)
         self.pub_target_observation = rospy.Publisher(self.namespace + '/targetObs', Marker, queue_size=5)
         self.pub_cylinder = rospy.Publisher(self.namespace + '/poseMarker', Marker, queue_size=1)
+        self.pub_target_obs_noise = rospy.Publisher(self.namespace + '/targetObsNoise', Float32, queue_size=5)
 
         # tf broadcaster
         self.broadcaster = tf.TransformBroadcaster()
@@ -501,9 +502,17 @@ class Robot(object):
             return
 
         # Add some noise
-        target_local.point.x += random.gauss(0, max(0.08, 0.05 * math.sqrt(abs(target_local.point.x))))
-        target_local.point.y += random.gauss(0, max(0.08, 0.05 * math.sqrt(abs(target_local.point.y))))
-        target_local.point.z += random.gauss(0, max(0.05, 0.02 * math.sqrt(abs(target_local.point.z))))
+        noises = np.array([
+            random.gauss(0, max(0.08, 0.05 * math.sqrt(abs(target_local.point.x)))),
+            random.gauss(0, max(0.08, 0.05 * math.sqrt(abs(target_local.point.y)))),
+            random.gauss(0, max(0.05, 0.02 * math.sqrt(abs(target_local.point.z))))
+        ])
+
+        self.pub_target_obs_noise.publish(Float32(np.linalg.norm(noises)))
+
+        target_local.point.x += noises[0]
+        target_local.point.y += noises[1]
+        target_local.point.z += noises[2]
 
         # create a marker arrow to connect robot and target
         marker = build_marker_arrow(target_local.point)
@@ -531,7 +540,6 @@ class Robot(object):
                 # Red color
                 marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
                 marker.text = 'NotSeen'
-                print 'you got it ' + self.name
 
             else:
                 for idx, name, pose_global, pose_local in self.otherRobots:
