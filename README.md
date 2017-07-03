@@ -23,7 +23,7 @@ The following modules are available in this dataset generator:
 
 To use this package, you will need to download and compile the OMNI dataset custom messages, available in the [read\_omni\_dataset](https://github.com/aamirahmad/read_omni_dataset) package.
 
-Please download the *infinite-robots* branch, as it is designed to work with this package. You can compile a single package in ROS with: `catkin_make --pkg read_omni_dataset`
+Please download the *[infinite-robots](https://github.com/aamirahmad/read_omni_dataset/tree/infinite-robots)* branch, as it is designed to work with this package. You can compile a single package in ROS with: `catkin_make --pkg read_omni_dataset`
 
 ## How to Use
 
