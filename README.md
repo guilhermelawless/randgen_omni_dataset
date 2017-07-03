@@ -1,18 +1,16 @@
-==================================
-randgen\_omni\_dataset
-==================================
+# randgen\_omni\_dataset
 
 This ROS package generates random datasets in a simulation environment, for multiple robots and targets with random motion. Currently, it is designed to work with the OMNI dataset, but can be adapted to different configurations.
 
-==================================
-Brief Description
-==================================
+## Brief Description
 
 You need to test your localization/tracking algorithm for more robots than you have access to, so you desire a simulation environment. However, many of the existing simulators are time-consuming to setup. This package provides a simple to use simulation environment, which displays internal states in rviz-friendly formats.
 
 Due to using multiple ROS nodes, it is also multi-threading friendly.
 
-The following modules are available in this simulator:
+## Modules
+
+The following modules are available in this dataset generator:
 
 * **Robot module** - provides the interface between odometry and landmark/target observations, pose publishing, etc. It is the main module
 * **Odometry module** - provides new odometry readings at a constant frequency, to which the robot module subscribes in order to advance its pose. A probabilistic noise model is used, similar to the model described in Probabilistic Robotics. The odometry changes states (from WalkForward to Rotate) through a ROS service
@@ -21,17 +19,13 @@ The following modules are available in this simulator:
 * **Landmarks module** - Loads a configuration file and sets up static landmarks in the stage. Publishes a ROS topic with the landmarks positions
 * **OMNI\_custom module** - Transforms the ROS/rviz standard formats in the other modules to the OMNI dataset message format.
 
-==================================
-Requisites
-==================================
+## Requisites
 
 To use this package, you will need to download and compile the OMNI dataset custom messages, available in the [read\_omni\_dataset](https://github.com/aamirahmad/read_omni_dataset) package.
 
 Please download the *infinite-robots* branch, as it is designed to work with this package. You can compile a single package in ROS with: `catkin_make --pkg read_omni_dataset`
 
-==================================
-How to Use
-==================================
+## How to Use
 
 To generate sample data, follow these steps:
 
@@ -42,17 +36,13 @@ To generate sample data, follow these steps:
 3. Run: `roslaunch randgen_omni_dataset new.launch` and the simulation will begin
 4. (optional) if you want to visualize the simulation, run rviz and load the configuration *rviz.rviz* in the config directory (up to 10 robots, but customizable)
 
-==================================
-Contribute
-==================================
+## Contribute
 
 The simulator is designed in modules, so you are welcome to make your own modules, suggest modifications, add more customizability.
 
 At the moment, the target simulation is quite rough, and contributions to this module are appreciated.
 
-==================================
-Using with PF-UCLT
-==================================
+## Using with PF-UCLT
 
 After recording to a rosbag file, you can use [pfuclt\_omni\_dataset](https://github.com/guilhermelawless/pfuclt_omni_dataset) to try localization and target tracking.
 
