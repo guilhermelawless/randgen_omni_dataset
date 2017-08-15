@@ -30,9 +30,14 @@ Please download the *[infinite-robots](https://github.com/aamirahmad/read_omni_d
 To generate sample data, follow these steps:
 
 1. Download or clone this package
-2. Execute the *config/create\_launch\_file* script, followed with the number of robots you desire
-  * This script creates the new.launch file in the launch directory
-  * You can specify optional parameters. Use the --help option to learn about these
+2. Execute one of the following scripts (python, might need to chmod +x):
+  * If you don't need recording to a rosbag, use the *config/**create\_launch\_file*** script, followed by the number of robots you desire
+    * This script creates the new.launch file in the launch directory
+    * You can specify optional parameters. Use the --help option to learn about these
+    
+  * If you need recording to a rosbag, use the *config/**create_launch_record*** script, followed by the number of robots you desire
+    * This script creates the new.launch file in the launch directory
+    * You should use the --help option to learn how to specify the many optional parameters
 3. Run: `roslaunch randgen_omni_dataset new.launch` and the simulation will begin
 4. (optional) if you want to visualize the simulation, run rviz and load the configuration *rviz.rviz* in the config directory (up to 10 robots, but customizable)
 
