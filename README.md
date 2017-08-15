@@ -51,9 +51,11 @@ At the moment, the target simulation is quite rough, and contributions to this m
 
 After recording to a rosbag file, you can use [pfuclt\_omni\_dataset](https://github.com/guilhermelawless/pfuclt_omni_dataset) to try localization and target tracking.
 
-To accomplish this, when the executing the create\_launch\_file script, it will generate a file in your the pfuclt package launch folder to work with it. By default, it will be named new.launch, so you can execute it with: `roslaunch pfuclt_omni_dataset new.launch`
+To accomplish this, when executing the create\_launch\_file script, it will generate a file in your the pfuclt package launch folder to work with it. By default, it will be named new.launch, so you can execute it with: `roslaunch pfuclt_omni_dataset new.launch`
 
-Please edit this file first, or use the path argument to specify the location of a omni_simulated.bag file. Also, if you need, use the rate argument to set different rosbag playing rates.
+The dataset generation is very CPU intensive for a higher number of robots, therefore it is advised to use the create\_launch\_record script and appropriate optional parameters to generate a rosbag of the whole dataset. The generated launch file will automatically record the dataset. The generated launch file for PF-UCLT will automatically launch the rosbag player when it is used.
+
+If necessary when performing PF-UCLT, use the rate argument of the launch file to set different rosbag playing rates.
 
 Use the rviz config file pfuclt\_omni\_dataset/config/omni_sim.rviz to visualize the algorithm in rviz. **Important**: you need to execute rviz only after setting the /use_sim_time parameter to true, which is done by calling the launch file above.
 
