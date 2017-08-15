@@ -25,6 +25,9 @@ def prettify(elem):
 def dist(x1, x2, y1, y2):
     return math.sqrt(math.pow(x2-x1, 2) + math.pow(y2-y1, 2))
 
+def fix_path(path):
+    return path if path[-1]=='/' else path+'/'
+
 
 class Robot:
     def __init__(self, r_id, x, y, theta, radius):
@@ -90,9 +93,16 @@ if __name__ == '__main__':
     parser.add_argument('-ra', '--rate', type=float, default='1', help='Rate at which the rosbag file will play during PF-UCLT')
     args = parser.parse_args()
 
+    # fix the paths
+    args.dataset_path = fix_path(args.dataset_path)
+    args.evaluator_path = fix_path(args.evaluator_path)
+    args.performer_path = fix_path(args.performer_path)
+        
+
     rospy.init_node('config_file_create')
     if not rospy.has_param(args.landmarks_param):
         print 'Please load landmark configuration into ' + args.landmarks_param + 'parameter first'
+        print 'rosparam load config/landmarks.yaml'
         sys.exit(0)
 
     landmarks = rospy.get_param(args.landmarks_param)
@@ -267,7 +277,7 @@ if __name__ == '__main__':
     try:
         path = rospack.get_path('pfuclt_omni_dataset')
     except rospkg.ResourceNotFound:
-        print 'Didnt find pfuclt package'
+        print 'Didnt find pfuclt package, so the launch file was not generated for it. Re-run this script after installing the package'
         sys.exit(0)
     path += '/launch/' + args.file
 

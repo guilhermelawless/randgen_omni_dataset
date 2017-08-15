@@ -78,10 +78,9 @@ if __name__ == '__main__':
     parser.add_argument('-ag', '--alpha_gen', type=str, default='0.015, 0.1, 0.5, 0.001', help='Alpha values for generating odometry')
     parser.add_argument('-aa', '--alpha_alg', type=str, default='0.015, 0.1, 0.5, 0.001', help='Alpha values for the PF-UCLT algorithm')
     parser.add_argument('-L', '--landmarks_param', type=str, default='/landmarks', help='Parameter with landmarks positions')
-    parser.add_argument('-c', '--landmark_collision', type=bool, default=True, help='Use collision and avoidance system for landmarks')
+    parser.add_argument('-c', '--landmark_collision', type=lambda s: s.lower() in ['true','t','1','yes'], default='true', help='Use collision and avoidance system for landmarks')
+    parser.add_argument('-o', '--occlusions', type=lambda s: s.lower() in ['true','t','1','yes'], default='true', help='Wheter to use an occlusion model for observations or not')
     parser.add_argument('-s', '--target_model_stddev', type=float, default=30, help='Standard deviation to use when predicting the target in PF-UCLT')
-    parser.add_argument('-D', '--dataset_path', type=str, default='/home/$(optenv USER gsl)/datasets/omni_sim/', help='Path to save dataset (rosbag file), without file name')
-    parser.add_argument('-b', '--bag', type=str, default='omni_simulated.bag', help='Rosbag file to record and then play from')
     parser.add_argument('-p', '--num_particles', type=int, default='250', help='Number of particles that PF-UCLT will use')
     parser.add_argument('-ra', '--rate', type=float, default='1', help='Rate at which the rosbag file will play during PF-UCLT')
     args = parser.parse_args()
@@ -89,6 +88,7 @@ if __name__ == '__main__':
     rospy.init_node('config_file_create')
     if not rospy.has_param(args.landmarks_param):
         print 'Please load landmark configuration into ' + args.landmarks_param + 'parameter first'
+        print 'rosparam load config/landmarks.yaml'
         sys.exit(0)
 
     landmarks = rospy.get_param(args.landmarks_param)
@@ -168,6 +168,7 @@ if __name__ == '__main__':
         ET.SubElement(node_robot, 'param', name='landmark_collision', value=str(args.landmark_collision))
         ET.SubElement(node_robot, 'param', name='landmark_obs_threshold', value=str(args.threshold))
         ET.SubElement(node_robot, 'param', name='target_obs_threshold', value=str(args.threshold))
+        ET.SubElement(node_robot, 'param', name='occlusions', value=str(args.occlusions))
 
         # robot odometry node
         node_odometry = ET.SubElement(launch, 'node', name=robot.name+'_odometry', pkg=PKG, type='odometry', output='screen')
@@ -187,14 +188,10 @@ if __name__ == '__main__':
 
     # general parameters to be modified
     ET.SubElement(launch, 'param', name='use_sim_time', value='true')
-    ET.SubElement(launch, 'arg', name='path', default=args.dataset_path + args.bag)
     ET.SubElement(launch, 'arg', name='debug', default='false')
     ET.SubElement(launch, 'arg', name='publish', default='true')
     ET.SubElement(launch, 'arg', name='rate', default=str(args.rate))
-
-    # the rosbag node
-    str_args = '--quiet --clock --rate=$(arg rate) $(arg path)'
-    ET.SubElement(launch, 'node', pkg='rosbag', type='play', name='player', output='screen', args=str_args)
+    ET.SubElement(launch, 'arg', name='particles', default=str(args.num_particles))
 
     # the performer node
     node_pfuclt = ET.SubElement(launch, 'node', name='performer',
@@ -235,9 +232,9 @@ if __name__ == '__main__':
     str_particles = '['
     for robot in robot_list:
         for var in robot.x, robot.y, robot.theta:
-            str_particles += str(var-0.2) + ',' + str(var+0.2) + ','
+            str_particles += str(var-0.02) + ',' + str(var+0.02) + ','
     for var in [ball['x'], ball['y'], ball['z']]:
-        str_particles += str(var-0.2) + ',' + str(var+0.2) + ','
+        str_particles += str(var-0.02) + ',' + str(var+0.02) + ','
     str_particles = str_particles[:len(str_particles)-1] + ']'  # last comma becomes ]
     ET.SubElement(launch, 'rosparam', param='CUSTOM_PARTICLE_INIT').text = str_particles
 
@@ -245,7 +242,7 @@ if __name__ == '__main__':
     try:
         path = rospack.get_path('pfuclt_omni_dataset')
     except rospkg.ResourceNotFound:
-        print 'Didnt find pfuclt package'
+        print 'Didnt find pfuclt package, so the launch file was not generated for it. Re-run this script after installing the package'
         sys.exit(0)
     path += '/launch/' + args.file
 
