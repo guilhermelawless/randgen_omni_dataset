@@ -195,7 +195,7 @@ class Robot(object):
         # GT pose
         self.msg_GT = PoseWithCovariance()
         self.msg_GT_rviz = PoseStamped()
-        self.msg_GT_rviz.header.frame_id = self.frame
+        self.msg_GT_rviz.header.frame_id = BASE_FRAME
 
         # pose marker
         self.cylinder = Marker()
@@ -394,14 +394,15 @@ class Robot(object):
 
         quaternion = tf.transformations.quaternion_about_axis(self.pose['theta'], [0, 0, 1])
 
-        self.broadcaster.sendTransform((self.pose['x'], self.pose['y'], self.height),
+        self.broadcaster.sendTransform([self.pose['x'], self.pose['y'], self.height],
                                        quaternion,
                                        stamp,
                                        self.frame,
                                        BASE_FRAME)
 
         self.msg_GT_rviz.header.stamp = stamp
-        # everyhing else is 0 because of TF local frame
+        self.msg_GT_rviz.pose.position = Point(x=self.pose['x'], y=self.pose['y'], z=self.height)
+        self.msg_GT_rviz.pose.orientation = Quaternion(x=quaternion[0], y=quaternion[1], z=quaternion[2], w=quaternion[3])
 
         try:
             self.pub_gt_rviz.publish(self.msg_GT_rviz)
