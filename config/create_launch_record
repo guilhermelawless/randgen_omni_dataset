@@ -233,19 +233,19 @@ if __name__ == '__main__':
     ET.SubElement(node_pfuclt, 'remap', {'to': '/gtData', 'from': '/gtData_4robotExp'})
 
     # other parameters
-    ET.SubElement(launch, 'rosparam', param='PLAYING_ROBOTS').text = str([1] * args.N)
-    ET.SubElement(launch, 'param', name='MAX_ROBOTS', value=str(args.N))
-    ET.SubElement(launch, 'param', name='ROB_HT', value=str(args.height))
-    ET.SubElement(launch, 'param', name='MY_ID', value='1')
-    ET.SubElement(launch, 'param', name='NUM_TARGETS', value='1')
-    ET.SubElement(launch, 'param', name='LANDMARK_COV/K1', value='0.02')
-    ET.SubElement(launch, 'param', name='LANDMARK_COV/K2', value='0.005')
-    ET.SubElement(launch, 'param', name='LANDMARK_COV/K3', value='0.002')
-    ET.SubElement(launch, 'param', name='LANDMARK_COV/K4', value='0.005')
-    ET.SubElement(launch, 'param', name='LANDMARK_COV/K5', value='0.005')
-    ET.SubElement(launch, 'param', name='NUM_LANDMARKS', value='10')
-    ET.SubElement(launch, 'param', name='LANDMARKS_CONFIG', value='$(find pfuclt_omni_dataset)/config/landmarks.csv')
-    ET.SubElement(launch, 'param', name='USE_CUSTOM_VALUES', value='false')
+    ET.SubElement(node_pfuclt, 'rosparam', param='PLAYING_ROBOTS').text = str([1] * args.N)
+    ET.SubElement(node_pfuclt, 'param', name='MAX_ROBOTS', value=str(args.N))
+    ET.SubElement(node_pfuclt, 'param', name='ROB_HT', value=str(args.height))
+    ET.SubElement(node_pfuclt, 'param', name='MY_ID', value='1')
+    ET.SubElement(node_pfuclt, 'param', name='NUM_TARGETS', value='1')
+    ET.SubElement(node_pfuclt, 'param', name='LANDMARK_COV/K1', value='0.02')
+    ET.SubElement(node_pfuclt, 'param', name='LANDMARK_COV/K2', value='0.005')
+    ET.SubElement(node_pfuclt, 'param', name='LANDMARK_COV/K3', value='0.002')
+    ET.SubElement(node_pfuclt, 'param', name='LANDMARK_COV/K4', value='0.005')
+    ET.SubElement(node_pfuclt, 'param', name='LANDMARK_COV/K5', value='0.005')
+    ET.SubElement(node_pfuclt, 'param', name='NUM_LANDMARKS', value='10')
+    ET.SubElement(node_pfuclt, 'param', name='LANDMARKS_CONFIG', value='$(find pfuclt_omni_dataset)/config/landmarks.csv')
+    ET.SubElement(node_pfuclt, 'param', name='USE_CUSTOM_VALUES', value='false')
 
     # robot initial poses
     str_pos_init = '['
@@ -253,7 +253,7 @@ if __name__ == '__main__':
         str_pos_init += str(robot.x) + ', ' + str(robot.y) + ', ' + str(robot.theta) + ', '
     str_pos_init = str_pos_init[:len(str_pos_init)-2]  # remove last comma and whitespace
     str_pos_init += ']'
-    ET.SubElement(launch, 'rosparam', param='POS_INIT').text = str_pos_init
+    ET.SubElement(node_pfuclt, 'rosparam', param='POS_INIT').text = str_pos_init
 
     # particle initial ranges
     str_particles = '['
@@ -263,7 +263,7 @@ if __name__ == '__main__':
     for var in [ball['x'], ball['y'], ball['z']]:
         str_particles += str(var-0.02) + ',' + str(var+0.02) + ','
     str_particles = str_particles[:len(str_particles)-1] + ']'  # last comma becomes ]
-    ET.SubElement(launch, 'rosparam', param='CUSTOM_PARTICLE_INIT').text = str_particles
+    ET.SubElement(node_pfuclt, 'rosparam', param='CUSTOM_PARTICLE_INIT').text = str_particles
 
     # evaluate node
     #node_evaluate = ET.SubElement(launch, 'node', name='evaluator', output='screen', pkg='evaluate_omni_dataset', type='evaluate_omni_dataset')
@@ -277,7 +277,7 @@ if __name__ == '__main__':
     try:
         path = rospack.get_path('pfuclt_omni_dataset')
     except rospkg.ResourceNotFound:
-        print 'Didnt find pfuclt package, so the launch file was not generated for it. Re-run this script after installing the package'
+        print 'Didnt find pfuclt package, so the launch file was not generated for it. However you can still generate the data'
         sys.exit(0)
     path += '/launch/' + args.file
 
