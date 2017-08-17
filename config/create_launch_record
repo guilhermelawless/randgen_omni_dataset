@@ -88,14 +88,14 @@ if __name__ == '__main__':
     parser.add_argument('-db', '--dataset_bag', type=str, default='omni_simulated.bag', help='Rosbag file to record and then play from')
     parser.add_argument('-dt', '--dataset_time', type=int, default='300', help='Time (in seconds) to record dataset')
     parser.add_argument('-pp', '--performer_path', type=str, default='/home/$(optenv USER gsl)/datasets/pfuclt/', help='Path to save PF-UCLT and evaluate rosbag file, without file name')
-    parser.add_argument('-ep', '--evaluator_path', type=str, default='$(find evaluate_omni_dataset)/logs', help='Path to save the output files from evaluate_omni_dataset')
+    #parser.add_argument('-ep', '--evaluator_path', type=str, default='$(find evaluate_omni_dataset)/logs', help='Path to save the output files from evaluate_omni_dataset')
     parser.add_argument('-p', '--num_particles', type=int, default='250', help='Number of particles that PF-UCLT will use')
     parser.add_argument('-ra', '--rate', type=float, default='1', help='Rate at which the rosbag file will play during PF-UCLT')
     args = parser.parse_args()
 
     # fix the paths
     args.dataset_path = fix_path(args.dataset_path)
-    args.evaluator_path = fix_path(args.evaluator_path)
+    #args.evaluator_path = fix_path(args.evaluator_path)
     args.performer_path = fix_path(args.performer_path)
         
 
@@ -211,9 +211,9 @@ if __name__ == '__main__':
     ET.SubElement(launch, 'arg', name='publish', default='true')
     ET.SubElement(launch, 'arg', name='rate', default=str(args.rate))
     ET.SubElement(launch, 'arg', name='particles', default=str(args.num_particles))
-    ET.SubElement(launch, 'arg', name='evaluator_path', default=args.evaluator_path)
+    #ET.SubElement(launch, 'arg', name='evaluator_path', default=args.evaluator_path)
     ET.SubElement(launch, 'arg', name='performer_path', default=args.performer_path)
-    ET.SubElement(launch, 'arg', name='evaluator_file', default='experimentX-y_Nrobots_datasetD_runR.txt')
+    #ET.SubElement(launch, 'arg', name='evaluator_file', default='experimentX-y_Nrobots_datasetD_runR.txt')
     ET.SubElement(launch, 'arg', name='performer_file', default='experimentX-y_Nrobots_datasetD_runR.bag')
 
     # the rosbag node
@@ -266,8 +266,8 @@ if __name__ == '__main__':
     ET.SubElement(launch, 'rosparam', param='CUSTOM_PARTICLE_INIT').text = str_particles
 
     # evaluate node
-    node_evaluate = ET.SubElement(launch, 'node', name='evaluator', output='screen', pkg='evaluate_omni_dataset', type='evaluate_omni_dataset')
-    ET.SubElement(node_evaluate, 'param', name='file', value='$(arg evaluator_path)/$(arg evaluator_file)')
+    #node_evaluate = ET.SubElement(launch, 'node', name='evaluator', output='screen', pkg='evaluate_omni_dataset', type='evaluate_omni_dataset')
+    #ET.SubElement(node_evaluate, 'param', name='file', value='$(arg evaluator_path)/$(arg evaluator_file)')
 
     # node to record everything from pfuclt and evaluate to bag file
     str_args = '--all --output-name=$(arg performer_path)/$(arg performer_file)'
