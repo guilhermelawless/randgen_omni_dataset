@@ -4,7 +4,7 @@ import rospy
 from randgen_omni_dataset import landmarks
 from randgen_omni_dataset import walls
 
-LOG_LEVEL = rospy.DEBUG
+LOG_LEVEL = rospy.INFO
 
 if __name__ == '__main__':
 

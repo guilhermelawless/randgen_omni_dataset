@@ -229,6 +229,7 @@ class Robot(object):
         self.pub_target_observation = rospy.Publisher(self.namespace + '/targetObs', Marker, queue_size=5)
         self.pub_cylinder = rospy.Publisher(self.namespace + '/poseMarker', Marker, queue_size=1)
         self.pub_target_obs_noise = rospy.Publisher(self.namespace + '/targetObsNoise', Float32, queue_size=5)
+        self.pub_robot_observations = rospy.Publisher(self.namespace + '/robotObs', MarkerArray, queue_size=5)
 
         # tf broadcaster
         self.broadcaster = tf.TransformBroadcaster()
@@ -305,6 +306,7 @@ class Robot(object):
             self.generate_observations_counter = 0
             self.generate_landmark_observations(None)
             self.generate_target_observation(None)
+            self.generate_robot_observations(None)
 
         # if rotating timer is set, don't even check for collisions
         if self.rotating_timer_set:
@@ -560,6 +562,58 @@ class Robot(object):
             self.pub_target_observation.publish(marker)
         except rospy.ROSException, err:
             rospy.logdebug('ROSException - %s', err)
+
+    def generate_robot_observations(self, event):
+        if self.target_pose is None:
+            return
+        
+        marker_id = 0
+        markers = MarkerArray()
+        stamp = rospy.Time.now()
+
+        # for all other robots, generate an observation
+        for idx, name, pose_global, pose_local in self.otherRobots:
+            if pose_local is False:
+                continue
+
+            # add some noise (pose_local is a copy)
+            pose_local.pose.position.x += random.gauss(0, max(0.08, 0.04 * math.sqrt(abs(pose_local.pose.position.x))))
+            pose_local.pose.position.y += random.gauss(0, max(0.08, 0.04 * math.sqrt(abs(pose_local.pose.position.y))))
+            
+            # create a marker arrow to connect both robots
+            marker = build_marker_arrow(pose_local.pose.position)
+            marker.header.frame_id = self.frame
+            marker.header.stamp = stamp
+            marker.ns = self.namespace+'/robotObs'
+            marker.id = idx
+
+            # paint as green and mark as seen by default
+            marker.color = ColorRGBA(0.1, 1.0, 0.1, 1.0)
+            marker.text = 'Seen'
+
+            # check occlusions, if occluded paint as red
+            if self.occlusions is True:
+                for other_idx, other_name, other_pose_global, other_pose_local in [robot for robot in self.otherRobots if robot[0] != idx]: # all robots except self and current observated
+                    if other_pose_local is False:
+                        continue
+
+                    if check_occlusions([0, 0],
+                                        [pose_local.pose.position.x, pose_local.pose.position.y],
+                                        self.radius,  # assume same radius for all robots
+                                        [other_pose_local.pose.position.x, other_pose_local.pose.position.y]):
+                        # Red color
+                        marker.color = ColorRGBA(1.0, 0.1, 0.1, 1.0)
+                        marker.text = 'NotSeen'
+                        break
+
+            markers.markers.append(marker)
+            marker_id += 1
+
+        try:
+            self.pub_robot_observations.publish(markers)
+        except rospy.ROSException, err:
+            rospy.logdebug('ROSException - %s', err)
+        
 
     def other_robots_callback(self, msg, list_id):
         # Obtain the pose in the local frame

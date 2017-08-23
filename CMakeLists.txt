@@ -62,7 +62,7 @@ catkin_python_setup()
 
 add_message_files(
     DIRECTORY msg
-    FILES CustomOdometry.msg
+    FILES CustomOdometry.msg RobotObservation.msg RobotObservationArray.msg
 )
 
 add_service_files(

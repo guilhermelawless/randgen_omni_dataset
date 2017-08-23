@@ -3,7 +3,7 @@
 import rospy
 from randgen_omni_dataset import omni_custom
 
-LOG_LEVEL = rospy.DEBUG
+LOG_LEVEL = rospy.INFO
 
 if __name__ == '__main__':
 

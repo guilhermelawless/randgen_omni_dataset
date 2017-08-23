@@ -2,6 +2,7 @@ import rospy
 import tf
 import random
 from read_omni_dataset.msg import *
+from randgen_omni_dataset.msg import *
 from geometry_msgs.msg import PoseStamped, PoseWithCovariance, PointStamped, Point
 from visualization_msgs.msg import Marker, MarkerArray
 from randgen_omni_dataset.robot import norm2
@@ -43,6 +44,7 @@ class OmniCustom():
         list_ctr = 0
         self.publishers_lm = []
         self.publishers_target = []
+        self.publishers_robs = []
         self.heights = []
         for idx, running in enumerate(playing_robots):
 
@@ -78,6 +80,12 @@ class OmniCustom():
 
             # add subscriber to the target observations with argument to list id
             rospy.Subscriber(name + '/targetObs', Marker, self.target_callback, list_ctr)
+
+            # publisher for the robot observation array msg
+            self.publishers_robs.append(rospy.Publisher(name + '/robotsobservations', RobotObservationArray, queue_size=10))
+
+            # subscriber to robot observations
+            rospy.Subscriber(name + '/robotObs', MarkerArray, self.robot_observations_callback, list_ctr)
 
             # wait for odometry service to be available before continue
             rospy.wait_for_service(name + '/genOdometry/change_state')
@@ -185,5 +193,31 @@ class OmniCustom():
         # publish with updated information
         try:
             self.publishers_target[list_id].publish(ball_msg)
+        except rospy.ROSException, err:
+            rospy.logdebug('ROSException - %s', err)
+            
+    def robot_observations_callback(self, msg, list_id):
+        # type: (MarkerArray) -> None
+        
+        if len(msg.markers) == 0:
+            return
+        
+        # create msg and insert information
+        robs_msg = RobotObservationArray()
+        robs_msg.header = msg.markers[0].header
+        robs_msg.self_id = int(robs_msg.header.frame_id[-1])
+        
+        # information encoded in the 2nd point of the marker point list
+        for marker in msg.markers:
+            obs = RobotObservation(idx = marker.id,
+                                   x = marker.points[1].x,
+                                   y = marker.points[1].y,
+                                   occluded = (marker.text == 'Seen') )
+            
+            robs_msg.observations.append(obs)
+            
+        # Publish
+        try:
+            self.publishers_robs[list_id].publish(robs_msg)
         except rospy.ROSException, err:
             rospy.logdebug('ROSException - %s', err)
