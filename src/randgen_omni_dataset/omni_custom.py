@@ -212,7 +212,7 @@ class OmniCustom():
             obs = RobotObservation(idx = marker.id,
                                    x = marker.points[1].x,
                                    y = marker.points[1].y,
-                                   occluded = (marker.text == 'Seen') )
+                                   occluded = (marker.text == 'NotSeen') )
             
             robs_msg.observations.append(obs)
             
