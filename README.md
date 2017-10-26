@@ -21,21 +21,19 @@ The following modules are available in this dataset generator:
 
 ## Requisites
 
-To use this package, you will need to download and compile the OMNI dataset custom messages, available in the [read\_omni\_dataset](https://github.com/aamirahmad/read_omni_dataset) package.
-
-Please download the *[infinite-robots](https://github.com/aamirahmad/read_omni_dataset/tree/infinite-robots)* branch, as it is designed to work with this package. You can compile a single package in ROS with: `catkin_make --pkg read_omni_dataset`
+[ROS](https://www.ros.org). Tested with ROS Indigo and Kinetic. Visualization needs [rviz](wiki.ros.org/rviz)
 
 ## How to Use
 
 To generate sample data, follow these steps:
 
-1. Download or clone this package
-2. Execute one of the following scripts (python, might need to chmod +x):
+1. Clone and build this package with the *read\_omni\_dataset* submodule: `git clone --recursive git@github.com:guilhermelawless/randgen_omni_dataset.git && catkin_make`
+2. Execute one of the following scripts with `python <script>`:
   * If you don't need recording to a rosbag, use the *config/**create\_launch\_file*** script, followed by the number of robots you desire
     * This script creates the new.launch file in the launch directory
     * You can specify optional parameters. Use the --help option to learn about these
     
-  * If you need recording to a rosbag, use the *config/**create_launch_record*** script, followed by the number of robots you desire
+  * If you need recording to a rosbag, use the *config/**create\_launch\_record*** script, followed by the number of robots you desire
     * This script creates the new.launch file in the launch directory
     * You should use the --help option to learn how to specify the many optional parameters
 3. Run: `roslaunch randgen_omni_dataset new.launch` and the simulation will begin

@@ -115,7 +115,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES randgen_omni_dataset
-   CATKIN_DEPENDS rospy std_msgs message_runtime
+   CATKIN_DEPENDS rospy std_msgs message_runtime read_omni_dataset
 #  DEPENDS system_lib
 )
 
