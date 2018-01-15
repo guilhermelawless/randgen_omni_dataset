@@ -21,7 +21,7 @@ The following modules are available in this dataset generator:
 
 ## Requisites
 
-[ROS](https://www.ros.org). Tested with ROS Indigo and Kinetic. Visualization needs [rviz](wiki.ros.org/rviz)
+[ROS](https://www.ros.org). Tested with ROS Indigo and Kinetic. Visualization needs [rviz](https://wiki.ros.org/rviz)
 
 ## How to Use
 
