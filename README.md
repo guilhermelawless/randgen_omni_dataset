@@ -27,7 +27,7 @@ The following modules are available in this dataset generator:
 
 To generate sample data, follow these steps:
 
-1. Clone and build this package with the *read\_omni\_dataset* submodule: `git clone --recursive git@github.com:guilhermelawless/randgen_omni_dataset.git && catkin_make`
+1. Clone and build this package with the *read\_omni\_dataset* submodule: `git clone --recursive https://github.com/guilhermelawless/randgen_omni_dataset.git && catkin_make`
 2. Execute one of the following scripts with `python <script>`:
   * If you don't need recording to a rosbag, use the *config/**create\_launch\_file*** script, followed by the number of robots you desire
     * This script creates the new.launch file in the launch directory
